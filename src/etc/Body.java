@@ -1,19 +1,20 @@
-package n_bodies;
+package etc;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
 
 public class Body {
 	
 	public  final Lock  lock = new ReentrantLock  ();	
 	
-	int id;
-	int time;
-	float mass;
+	public int id;
+	public int time;
+	public float mass;
 	
-	Vector pos;
-	Vector speed;
-	Vector acc;
+	public Vector pos;
+	public Vector speed;
+	public Vector acc;
 	
 	public Body(int id_, float mass,  Vector pos_, Vector speed_, Vector acc_) {
 		this.id=id_;

@@ -1,8 +1,8 @@
-package n_bodies;
+package etc;
 
 public class Vector {
-	float x;
-	float y;
+	public float x;
+	public float y;
 	
 	public Vector (float a, float b) {
 		x=a;
@@ -26,7 +26,7 @@ public class Vector {
 	}
 	
 	public float distance(Vector v) {
-		return (Math.abs(x-v.x)+Math.abs(y-v.y)) ;
+		return ((float) Math.sqrt( (x-v.x)*(x-v.x) + (y-v.y)*(y-v.y) ) ) ;
 	}
 }
 

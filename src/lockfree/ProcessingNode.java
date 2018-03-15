@@ -1,6 +1,8 @@
-package n_bodies;
+package lockfree;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import etc.Body;
+import etc.Force;
+
 
 /*
  * ProcessingNode update the position of the bodies.
@@ -13,26 +15,26 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ProcessingNode implements Runnable {
 	
 	Body[] bodies;
-	AtomicInteger time;
+	Clock clock;
 	int first;
 	Force force;
 	int delta;
-	float[][][] results;
+	Buffer buffer;
 	int maxTime;
 	
-	public ProcessingNode(Body[] bodies, AtomicInteger time, int first, Force force, int delta, float[][] buffer, int maxTime){
+	public ProcessingNode(Body[] bodies, Clock clock, int first, Force force, int delta, Buffer buffer, int maxTime){
 		this.bodies=bodies;
 		this.first=first;
 		this.force=force;
 		this.delta=delta;
-		this.results=results;
-		this.time=time;
+		this.buffer=buffer;
+		this.clock=clock;
 		this.maxTime = maxTime;
 	}
 	
 	@Override
 	public void run() {
-		int currentTime = time.get();
+		int currentTime = clock.time.get();
 		//maxTime - 1 because body[i].time is incremented in the loop
 		while(currentTime < maxTime-1){
 			boolean increment = true;
@@ -49,13 +51,11 @@ public class ProcessingNode implements Runnable {
 						if( bodies[i].time > currentTime )	break;	
 						else{
 							//DEBUG :
-							//System.out.println("Thread n° " + Thread.currentThread().getId() + " bodyTime : " + bodies[i].time + " Time : " + time.get() + " CurrentTime " + currentTime + " Body n° : "+i);
+							System.out.println("Thread n° " + Thread.currentThread().getId() + " bodyTime : " + bodies[i].time + " Time : " + clock.time.get() + " CurrentTime " + currentTime + " Body n° : "+i);
 							//System.out.println(bodies[i].toString());
 
 							bodies[i].setAll(bodies, force, delta);
-							
-							results[bodies[i].time][i][0]=bodies[i].pos.x;
-							results[bodies[i].time][i][1]=bodies[i].pos.y;
+							buffer.data[bodies[i].time % buffer.size][i]=bodies[i].pos;
 						}
 						
 					}finally {
@@ -64,8 +64,10 @@ public class ProcessingNode implements Runnable {
 				}
 			}
 			
-			if(increment)	time.compareAndSet(currentTime,currentTime+1);
-			currentTime = time.get();
+			if(increment)	{
+				 clock.time.compareAndSet(currentTime,currentTime+1);
+			}
+			currentTime = clock.time.get();
 		}
 	}
 		

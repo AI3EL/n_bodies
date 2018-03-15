@@ -1,4 +1,5 @@
-package n_bodies;
+package etc;
+
 
 public class GravitationnalForce extends Force {
 	

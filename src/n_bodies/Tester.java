@@ -2,86 +2,82 @@ package n_bodies;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import lockfree.Buffer;
+import lockfree.Clock;
+import lockfree.ProcessingNode;
+import lockfree.Visualizer;
+
+import etc.Body;
+import etc.Force;
+import etc.GravitationnalForce;
+import etc.Vector;
+
 public class Tester {
 	
-	//time ==n -> proccessingNode should process bodies that have time n to time n+1
+	/*
+	 * clock.time ==n -> proccessingNode should process bodies that have time n to time n+1
+	 * nBuffers is the number of timesteps a processing thread can go over var time
+	 * Hence there are nBuffers buffers
+	 */
+	
+	static int WIDTH = 1200;
+	static int HEIGHT = 800;
 	
 	static int n;
 	static int delta;
-	static AtomicInteger time;
-	static Buffer buffer;
+	static Clock clock;
 	static Body[] bodies;
-	static float[][][] results;
 	static Thread[] threads;
 	static Force force;
+	static Buffer buffer;
 	
-	public static void test2b(int nThreads, int maxTime){
+	public static void test2b(int nThreads, int bufferSize, int maxTime){
 		n = 2;
 		delta = 1;
 		bodies = new Body[n];
-		time = new AtomicInteger(0);
-		results = new float[maxTime][n][2];
+		clock = new Clock();
+		buffer = new Buffer(bufferSize,n);
 		threads = new Thread[nThreads];
 		force = new GravitationnalForce();
 	
-		bodies[0] = new Body(0, 100, new Vector(0,0), new Vector(0,0), new Vector(0,0));
-		bodies[1] = new Body(1, 1, new Vector(10,10), new Vector(0,0), new Vector(0,0));
+		bodies[0] = new Body(0, 1, new Vector(10,10), new Vector(0,0), new Vector(0,0));
+		bodies[1] = new Body(1, 1, new Vector(500,500), new Vector(0,0), new Vector(0,0));
 
 		
 		for(int i=0; i< nThreads; i++){
-			threads[i] = new Thread(new ProcessingNode(bodies, time, 0, force, delta, results, maxTime));
+			threads[i] = new Thread(new ProcessingNode(bodies, clock, 0, force, delta, buffer, maxTime));
 			threads[i].start();
 		}
-		for(int i=0; i< nThreads; i++){
-			try {
-				threads[i].join();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-	}
-		for(int i=0; i< maxTime; i++){
-			String line=" ";
-			for(int j=0; j< n ; j++){
-				line+= "(" + String.valueOf(results[i][j][0]) + "," + String.valueOf(results[i][j][1]) +")" + " ";
-			}
-			System.out.println(line);
-		}
+		
+		Visualizer visualizer = new Visualizer(n, maxTime, clock, buffer, WIDTH, HEIGHT);
 	}
 	
-	public static void testGrid(int nThreads, int maxTime, int width, int height){
+	public static void testGrid(int nThreads, int bufferSize, int maxTime, int width, int height){
 		n = width * height;
 		delta = 1;
 		bodies = new Body[n];
-		time = new AtomicInteger(0);
-		results = new float[maxTime][n][2];
+		clock = new Clock();
+		buffer = new Buffer(bufferSize,n);
 		threads = new Thread[nThreads];
 		force = new GravitationnalForce();
+		int xBegin = WIDTH/2 - (width * 20)/2 ;
+		int yBegin = HEIGHT/2 - (height * 20)/2 ;
+
 	
 		for(int i=0; i< width ; i++){
 			for(int j=0; j<height;j++){
-				bodies[j + i*height] = new Body(j+i*height, 10, new Vector(i,j), new Vector(0,0), new Vector(0,0));
+				bodies[j + i*height] = new Body(j+i*height, 1, new Vector(xBegin + (i+1)*20, yBegin + (j+1)*20), new Vector(0,0), new Vector(0,0));
 			}
 		}
 
 		
 		for(int i=0; i< nThreads; i++){
-			threads[i] = new Thread(new ProcessingNode(bodies, time, 0, force, delta, results, maxTime));
+			threads[i] = new Thread(new ProcessingNode(bodies, clock, 0, force, delta, buffer, maxTime));
 			threads[i].start();
 		}
-		for(int i=0; i< nThreads; i++){
-			try {
-				threads[i].join();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-	}
-		for(int i=0; i< maxTime; i++){
-			String line=" ";
-			for(int j=0; j< n ; j++){
-				line+= "(" + String.valueOf(results[i][j][0]) + "," + String.valueOf(results[i][j][1]) +")" + " ";
-			}
-			System.out.println(line);
-		}
+		
+		Visualizer visualizer = new Visualizer(n, maxTime, clock, buffer, WIDTH, HEIGHT);
+
 	}
 	
 	
@@ -89,10 +85,9 @@ public class Tester {
 	
 	public static void main(String[] args){
 		/*
-		 * 	testGrid(4,100, 10, 100);	//Takes like 3s
-		 * 	testGrid(4,100, 100, 100);	//Takes more than 2'
+		 * Works well on AI3EL's computer
 		 */
-		
+		testGrid(4,100,1000,30,30);
 	}
 	
 }
