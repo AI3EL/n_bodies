@@ -78,7 +78,8 @@ public class Tester {
 
 		
 		for(int i=0; i< nThreads; i++){
-			threads[i] = new Thread(new ProcessingNode(bodies, clock, 0, force, delta, buffer, maxTime));
+			int first = (i * n) / nThreads;
+			threads[i] = new Thread(new ProcessingNode(bodies, clock, first, force, delta, buffer, maxTime));
 			threads[i].start();
 		}
 		
