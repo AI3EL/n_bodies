@@ -1,6 +1,9 @@
 package lockfree;
 
 // https://openclassrooms.com/courses/apprenez-a-programmer-en-java/le-fil-rouge-une-animation
+/*
+ * The visualizer refresh each dt*10 and takes the last image calculated
+ */
 
 import java.awt.*;
 import java.awt.event.*; // Using AWT event classes and listener interfaces
@@ -70,6 +73,8 @@ public class Visualizer extends JFrame {
 		public Panneau(Vector[] pos){
 			this.pos = pos;
 		}
+		
+		//paintComponent is called by pan.repaint()
 		
 		public void paintComponent(Graphics g){
 			//Erase everything

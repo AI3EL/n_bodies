@@ -3,6 +3,9 @@ package etc;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+/*
+ * The function setAll updates acc, speed, pos and time
+ */
 
 public class Body {
 	

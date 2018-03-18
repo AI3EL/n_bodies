@@ -31,6 +31,9 @@ public class Tester {
 	static Force force;
 	static Buffer buffer;
 	
+	/*
+	 * Test with 2 bodies, of mass 1
+	 */
 	public static void test2b(int nThreads, int bufferSize, int maxTime){
 		n = 2;
 		delta = 1;
@@ -52,6 +55,9 @@ public class Tester {
 		Visualizer visualizer = new Visualizer(n, maxTime, clock, buffer, WIDTH, HEIGHT);
 	}
 	
+	/*
+	 * Test with width*height bodies on a centered grid, each has mass 1
+	 */
 	public static void testGrid(int nThreads, int bufferSize, int maxTime, int width, int height){
 		n = width * height;
 		delta = 1;
