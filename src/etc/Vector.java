@@ -9,6 +9,11 @@ public class Vector {
 		y=b;
 	}
 	
+	public Vector () {
+		x=0;
+		y=0;
+	}
+	
 	public void reset() {
 		x = y = 0;
 	}

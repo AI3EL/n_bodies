@@ -41,10 +41,10 @@ public class Visualizer extends JFrame {
 		this.setLocationRelativeTo(null);
 		this.setContentPane(pan);
 		this.setVisible(true);
-		run();
+		go();
 	}
 	
-	private void run(){
+	private void go(){
 		while(clock.time.get()<maxTime){
 			currentTime = System.currentTimeMillis();
 			if(currentTime - lastTime < 10 * dt){
@@ -58,6 +58,7 @@ public class Visualizer extends JFrame {
 				lastTime = currentTime;
 				frozenTime = clock.time.get();
 				for(int i=0; i< n; i++){
+					//This is ok because buffer is filled for clock.time.get()
 					pan.pos[i] = buffer.data[frozenTime%buffer.size][i];
 				}
 				pan.repaint();
