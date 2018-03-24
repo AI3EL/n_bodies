@@ -50,6 +50,7 @@ public class NegligibleNode implements Runnable {
 				int bj = (int) (Math.random() * n);
 				for(int i=0; i<n;i++){
 					int ri = (bi + i) % n;
+					// Here we need that bodies[ri].totalForce is always a totalForce vector, this is why we create newTotalForce in setForce
 					Vector currentTotalForce = bodies[ri].totalForce;
 					float initialNorm = currentTotalForce.distance(new Vector(0,0));
 					for(int j=0; j<n;j++){
