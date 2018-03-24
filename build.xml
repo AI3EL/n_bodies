@@ -1,0 +1,9 @@
+<project name="nbodies" default="test">
+	<target name="build">
+		<mkdir dir="bin" />
+		<javac srcdir="src" destdir="bin" includeAntRuntime="false"/>
+	</target>
+	<target name="test" depends="build">
+		<java fork="true" classname="n_bodies.Tester" classpath="bin"/>
+	</target>
+</project>
