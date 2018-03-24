@@ -1,6 +1,4 @@
-package lockfree;
-
-import java.util.concurrent.locks .*;
+package etc;
 
 import etc.Vector;
 
@@ -19,4 +17,15 @@ public class Buffer {
 		data = new Vector[size][n];
 		this.size=size;
 	}
+
+	public boolean waitWrite()
+	{
+		return false;
+	}
+
+	public boolean waitRead()
+	{
+		return false;
+	}
+
 }

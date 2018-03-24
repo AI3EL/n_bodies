@@ -50,7 +50,7 @@ public class Body {
 		for (int i=0; i< others.length; i++) {
 			// Is useful so that totalForce is never equal to 0 (otherwise there are concurrent issues)
 			Vector newTotalForce = new Vector();
-			if((!negligibleMode) || (!isNegligible[this.id][i])){
+			if(!(negligibleMode && isNegligible[this.id][i])){
 				forces[i] = f.exerce(this,others[i]);
 				newTotalForce = newTotalForce.add(forces[i]);
 			}

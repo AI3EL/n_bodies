@@ -2,7 +2,6 @@ package n_bodies;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import lockfree.Buffer;
 import lockfree.Clock;
 import lockfree.NegligibleNode;
 import lockfree.ProcessingNode;
@@ -12,6 +11,8 @@ import etc.Body;
 import etc.Force;
 import etc.GravitationnalForce;
 import etc.Vector;
+import etc.Buffer;
+import etc.BlockingBuffer;
 
 public class Tester {
 	
@@ -26,7 +27,7 @@ public class Tester {
 	static int HEIGHT = 800;
 	
 	static int n;
-	static int delta;
+	static float delta;
 	static Clock clock;
 	static Body[] bodies;
 	static Thread[] threads;
@@ -38,10 +39,10 @@ public class Tester {
 	 */
 	public static void test2b(int nThreads, int bufferSize, int maxTime){
 		n = 2;
-		delta = 1;
+		delta = 0.1f;
 		bodies = new Body[n];
 		clock = new Clock();
-		buffer = new Buffer(bufferSize,n);
+		buffer = new BlockingBuffer(bufferSize,n);
 		threads = new Thread[nThreads];
 		force = new GravitationnalForce();
 		boolean[][] isNegligible = new boolean[n][n];
@@ -59,7 +60,7 @@ public class Tester {
 			threads[i].start();
 		}
 		
-		Visualizer visualizer = new Visualizer(n, maxTime, clock, buffer, WIDTH, HEIGHT);
+		Visualizer visualizer = new Visualizer(n, delta, maxTime, buffer, WIDTH, HEIGHT);
 	}
 	
 	/*
@@ -67,10 +68,10 @@ public class Tester {
 	 */
 	public static void testGrid(int nThreads, int bufferSize, int maxTime, int width, int height){
 		n = width * height;
-		delta = 1;
+		delta = 1f;
 		bodies = new Body[n];
 		clock = new Clock();
-		buffer = new Buffer(bufferSize,n);
+		buffer = new BlockingBuffer(bufferSize,n);
 		threads = new Thread[nThreads];
 		force = new GravitationnalForce();
 		int xBegin = WIDTH/2 - (width * 20)/2 ;
@@ -96,7 +97,7 @@ public class Tester {
 		Thread negligibleNode = new Thread(new NegligibleNode( (float)0.95, clock, maxTime, isNegligible, bodies, fillTime));
 		negligibleNode.start();
 		
-		Visualizer visualizer = new Visualizer(n, maxTime, clock, buffer, WIDTH, HEIGHT);
+		Visualizer visualizer = new Visualizer(n, delta, maxTime, buffer, WIDTH, HEIGHT);
 		
 	}
 
@@ -106,6 +107,7 @@ public class Tester {
 		 * Works well on AI3EL's computer
 		 */
 		testGrid(2,100,1000,30,30);
+		//test2b(2, 500, 100000);
 	}
 	
 }

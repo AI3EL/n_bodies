@@ -9,32 +9,35 @@ import java.awt.*;
 import java.awt.event.*; // Using AWT event classes and listener interfaces
 import javax.swing.*;    // Using Swing's components and containers
 
-
 import etc.Vector;
+import etc.Buffer;
 
  
 public class Visualizer extends JFrame {
 	
 	private Panneau pan;
 	int n;
-	int maxTime;
+	float maxTime;
 	long currentTime;
 	long lastTime;
 	int frozenTime;
-	int dt;
+	float dt;
+	int maxfps = 200;
+	float speedup = 1.0f;
+	int interval;
 	
 	Clock clock;
 	Buffer buffer;
 
 	
-	public Visualizer(int n, int maxTime, Clock clock, Buffer buffer, int width, int height){
+	public Visualizer(int n, float delta, float  maxTime, Buffer buffer, int width, int height){
 		pan = new Panneau(buffer.data[0]);
-		this.dt=1;
+		this.dt = delta;
+		this.interval = 1000 / maxfps;
 		this.buffer=buffer;
 		this.lastTime=this.currentTime;
 		this.n = n;
 		this.maxTime=maxTime;
-		this.clock=clock;
 		this.setTitle("n_bodies");
 		this.setSize(width,height);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -43,25 +46,35 @@ public class Visualizer extends JFrame {
 		this.setVisible(true);
 		go();
 	}
+
 	
+	private int lastOwnTime = 0;
+	private int ownTime = 0;
+
 	private void go(){
-		while(clock.time.get()<maxTime){
+		lastTime = System.currentTimeMillis();
+		while(ownTime < maxTime){
 			currentTime = System.currentTimeMillis();
-			if(currentTime - lastTime < 10 * dt){
+			while((ownTime - lastOwnTime)*dt*speedup*1000.0 < (currentTime - lastTime) || ownTime==0) {
+				buffer.waitRead();
+				ownTime++;
+			}
+			for(int i=0; i< n; i++){
+				pan.pos[i] = buffer.data[ownTime % buffer.size][i];
+			}
+			pan.repaint();
+			lastTime = currentTime;
+			lastOwnTime = ownTime;
+			currentTime = System.currentTimeMillis();
+			while(currentTime - lastTime < interval ){
+				currentTime = System.currentTimeMillis();
+				/*
 				try {
-					Thread.sleep(10*dt - (currentTime - lastTime));
+					Thread.sleep(interval  - (currentTime - lastTime));
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-			}
-			else {
-				lastTime = currentTime;
-				frozenTime = clock.time.get();
-				for(int i=0; i< n; i++){
-					//This is ok because buffer is filled for clock.time.get()
-					pan.pos[i] = buffer.data[frozenTime%buffer.size][i];
-				}
-				pan.repaint();
+				*/
 			}
 		}
 	}

@@ -2,6 +2,7 @@ package lockfree;
 
 import etc.Body;
 import etc.Vector;
+import etc.Buffer;
 
 /*
  * err is the proportion of the total force vector we accept to lose for approximation
