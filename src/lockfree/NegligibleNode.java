@@ -2,16 +2,15 @@ package lockfree;
 
 import etc.Body;
 import etc.Vector;
+import etc.Buffer;
 
 /*
- * NOTE : We don't need to lock bodies if the forces never take intermediate values when reseting, because there is a race condition...
- * Has to check this is possible.
  * err is the proportion of the total force vector we accept to lose for approximation
  * deletedNorm holds the cumulative approximation of lost of norm 
- * In the current implementation, bodies with low id will often be negliged.
- * To counter this we could do a randomization of the first index to be checked.
  * Should we redefine negligible points after a certain number of body position updates or after a certain amount of time ?
  * Here we do a mix
+ * We look a negligible force with aleatory beginning points
+ * At each fillTime we recalculate isNegligible
  * Could optimize by calculating half of forces as F(A,B) = F(B,A)
  */
 
@@ -52,6 +51,7 @@ public class NegligibleNode implements Runnable {
 				int bj = (int) (Math.random() * n);
 				for(int i=0; i<n;i++){
 					int ri = (bi + i) % n;
+					// Here we need that bodies[ri].totalForce is always a totalForce vector, this is why we create newTotalForce in setForce
 					Vector currentTotalForce = bodies[ri].totalForce;
 					float initialNorm = currentTotalForce.distance(new Vector(0,0));
 					for(int j=0; j<n;j++){

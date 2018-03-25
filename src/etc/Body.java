@@ -5,6 +5,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /*
  * The function setAll updates acc, speed, pos and time
+ * n is the number of other bodies
+ * totalForce is the resultant of all forces applied on the Body
  */
 
 public class Body {
@@ -44,12 +46,11 @@ public class Body {
 		time++;
 	}
 	
-	//Suppose it is given reinitialized arrays
 	public void setForces(Body[] others, Force f,  boolean[][] isNegligible, boolean negligibleMode){
 		for (int i=0; i< others.length; i++) {
-			// Is useful so that totalForce is never equal to 0
+			// Is useful so that totalForce is never equal to 0 (otherwise there are concurrent issues)
 			Vector newTotalForce = new Vector();
-			if((!negligibleMode) || (!isNegligible[this.id][i])){
+			if(!(negligibleMode && isNegligible[this.id][i])){
 				forces[i] = f.exerce(this,others[i]);
 				newTotalForce = newTotalForce.add(forces[i]);
 			}

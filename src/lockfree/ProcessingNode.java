@@ -3,6 +3,7 @@ package lockfree;
 import etc.Body;
 import etc.Force;
 import etc.Vector;
+import etc.Buffer;
 
 
 /*
@@ -21,7 +22,7 @@ public class ProcessingNode implements Runnable {
 	Clock clock;
 	int first;
 	Force force;
-	int delta;
+	float delta;
 	Buffer buffer;
 	int maxTime;
 	int fillTime; // Each fillTime timesteps, the node puts in forces[][] the resultant forces of each
@@ -29,7 +30,7 @@ public class ProcessingNode implements Runnable {
 	Vector[][] forces;
 	Vector[] totalForces;
 	
-	public ProcessingNode(Body[] bodies, Clock clock, int first, Force force, int delta, Buffer buffer, int maxTime, boolean[][] isNegligible, int fillTime){
+	public ProcessingNode(Body[] bodies, Clock clock, int first, Force force, float delta, Buffer buffer, int maxTime, boolean[][] isNegligible, int fillTime){
 		this.bodies=bodies;
 		this.first=first;
 		this.force=force;
@@ -76,8 +77,9 @@ public class ProcessingNode implements Runnable {
 			}
 			
 			if(increment)	{
+				buffer.waitWrite(currentTime + 1);
 				if(clock.time.compareAndSet(currentTime,currentTime+1)){
-					System.out.println(clock.time.get());
+					//System.out.println(clock.time.get());
 				}
 			}
 			currentTime = clock.time.get();
