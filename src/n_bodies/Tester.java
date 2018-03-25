@@ -20,6 +20,12 @@ public class Tester {
 	 * clock.time ==n -> proccessingNode should process bodies that have time n to time n+1
 	 * nBuffers is the number of timesteps a processing thread can go over var time
 	 * Hence there are nBuffers buffers
+	 * 
+	 * Tests Results :
+	 * 22s for testGrid(2,100,1000,30,30) with no NegligibleNode
+	 * 16s for testGrid(2,100,1000,30,30) with NegligibleNode with fillTime at 50 and 5% error
+
+
 	 */
 	
 	static int WIDTH = 1200;
@@ -77,7 +83,7 @@ public class Tester {
 		int yBegin = HEIGHT/2 - (height * 20)/2 ;
 		boolean[][] isNegligible = new boolean[n][n];
 
-		int fillTime = 20;
+		int fillTime = 50;
 
 		
 		for(int i=0; i< width ; i++){
@@ -102,9 +108,6 @@ public class Tester {
 
 		
 	public static void main(String[] args){
-		/*
-		 * Works well on AI3EL's computer
-		 */
 		testGrid(2,100,1000,30,30);
 	}
 	
