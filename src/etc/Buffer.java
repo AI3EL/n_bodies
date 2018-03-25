@@ -18,7 +18,7 @@ public class Buffer {
 		this.size=size;
 	}
 
-	public boolean waitWrite()
+	public boolean waitWrite(int frame)
 	{
 		return false;
 	}

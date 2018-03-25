@@ -39,7 +39,7 @@ public class Tester {
 	 */
 	public static void test2b(int nThreads, int bufferSize, int maxTime){
 		n = 2;
-		delta = 0.1f;
+		delta = 0.005f;
 		bodies = new Body[n];
 		clock = new Clock();
 		buffer = new BlockingBuffer(bufferSize,n);
@@ -106,8 +106,8 @@ public class Tester {
 		/*
 		 * Works well on AI3EL's computer
 		 */
-		testGrid(2,100,1000,30,30);
-		//test2b(2, 500, 100000);
+		testGrid(2,100,10000000,30,30);
+		//test2b(2, 500, 10000000);
 	}
 	
 }

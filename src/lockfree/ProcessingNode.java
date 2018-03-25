@@ -77,9 +77,9 @@ public class ProcessingNode implements Runnable {
 			}
 			
 			if(increment)	{
+				buffer.waitWrite(currentTime + 1);
 				if(clock.time.compareAndSet(currentTime,currentTime+1)){
-					System.out.println(clock.time.get());
-					buffer.waitWrite();
+					//System.out.println(clock.time.get());
 				}
 			}
 			currentTime = clock.time.get();

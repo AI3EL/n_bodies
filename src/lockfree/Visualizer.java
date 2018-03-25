@@ -23,11 +23,21 @@ public class Visualizer extends JFrame {
 	int frozenTime;
 	float dt;
 	int maxfps = 200;
-	float speedup = 1.0f;
+	float speedup = 10.0f;
 	int interval;
 	
 	Clock clock;
 	Buffer buffer;
+
+	private int ownTime = 0;
+	private long startTime;
+
+	private int displayedFrames = 0;
+	private int droppedFrames = 0;
+	private int usedFrames = 0;
+	private int waits = 0;
+	private long lastStatus = 0;
+	boolean drop;
 
 	
 	public Visualizer(int n, float delta, float  maxTime, Buffer buffer, int width, int height){
@@ -48,37 +58,63 @@ public class Visualizer extends JFrame {
 	}
 
 	
-	private int lastOwnTime = 0;
-	private int ownTime = 0;
-
 	private void go(){
-		lastTime = System.currentTimeMillis();
+		startTime = System.currentTimeMillis();
 		while(ownTime < maxTime){
 			currentTime = System.currentTimeMillis();
-			while((ownTime - lastOwnTime)*dt*speedup*1000.0 < (currentTime - lastTime) || ownTime==0) {
-				buffer.waitRead();
+			drop = false;
+			while(ownTime * dt * 1000f < speedup * (currentTime - startTime)) {
+				if(buffer.waitRead()) {
+					waits++;
+				}
 				ownTime++;
+				usedFrames++;
+				if(drop)
+					droppedFrames++;
+				drop = true;
 			}
 			for(int i=0; i< n; i++){
 				pan.pos[i] = buffer.data[ownTime % buffer.size][i];
 			}
 			pan.repaint();
+			displayedFrames++;
+
+			if(currentTime - lastStatus > 2000) {
+				status();
+			}
 			lastTime = currentTime;
-			lastOwnTime = ownTime;
 			currentTime = System.currentTimeMillis();
-			while(currentTime - lastTime < interval ){
-				currentTime = System.currentTimeMillis();
-				/*
+			if(currentTime - lastTime < interval ){
 				try {
 					Thread.sleep(interval  - (currentTime - lastTime));
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-				*/
 			}
 		}
 	}
 	
+	private void status() {
+		long currentTime = System.currentTimeMillis();
+		long dobs = currentTime - lastStatus;
+		System.out.println(String.format(
+					"[%d ms] Shown %d Differents %d Dropped %d Underflow %d FPS %.1f (max %d) Speedup %.2f (goal %.2f)",
+					dobs,
+					displayedFrames,
+					usedFrames,
+					droppedFrames,
+					waits,
+					displayedFrames * 1000f / dobs,
+					maxfps,
+					usedFrames * dt * 1000f / dobs,
+					speedup));
+		lastStatus = currentTime;
+		displayedFrames = 0;
+		droppedFrames = 0;
+		usedFrames = 0;
+		waits = 0;
+	}
+		
 	
 	private class Panneau extends JPanel{
 		
