@@ -28,19 +28,18 @@ public class Visualizer extends JFrame {
 	Clock clock;
 	Buffer buffer;
 
-	private int ownTime = 0;
+	private int currentFrame = 0;
 	private long startTime;
 
 	private int displayedFrames = 0;
 	private int droppedFrames = 0;
-	private int usedFrames = 0;
-	private int waits = 0;
+	private int usedFrames = 1;
+	private int underruns = 0;
 	private long lastStatus = 0;
 
 	
 	public Visualizer(int n, float delta, float  maxTime, float speedup, Buffer buffer, int width, int height){
-		//pan = new Panneau(buffer.data[0]);
-		pan = new Panneau(new Vector[n]);
+		pan = new Panneau(buffer.data[0]);
 		this.dt = delta;
 		this.interval = 1000 / maxfps;
 		this.buffer=buffer;
@@ -62,23 +61,30 @@ public class Visualizer extends JFrame {
 	
 	private void go(){
 		startTime = System.currentTimeMillis();
-		boolean drop;
-		while(ownTime < maxTime){
+		boolean underrun;
+		int retrieved;
+		int nextFrame;
+		while(currentFrame < maxTime){
+			underrun = false;
+			retrieved = 0;
 			currentTime = System.currentTimeMillis();
-			drop = false;
-			while(ownTime * dt * 1000f < speedup * (currentTime - startTime)) {
-				if(buffer.waitRead()) {
-					waits++;
+			nextFrame = (int)(speedup * (currentTime - startTime) / dt / 1000f);
+			while(currentFrame < nextFrame && !underrun) {
+				if(buffer.pollRead()) {
+					currentFrame++;
+					retrieved++;
+				} else {
+					underrun = true;
+					underruns++;
 				}
-				ownTime++;
-				usedFrames++;
-				if(drop)
-					droppedFrames++;
-				drop = true;
+			}
+			usedFrames += retrieved;
+			if(retrieved > 1) {
+				droppedFrames += (retrieved - 1);
 			}
 
 			for(int i=0; i< n; i++){
-				pan.pos[i] = buffer.data[ownTime % buffer.size][i];
+				pan.pos[i] = buffer.data[currentFrame % buffer.size][i];
 			}
 			pan.repaint();
 			displayedFrames++;
@@ -95,6 +101,7 @@ public class Visualizer extends JFrame {
 					e.printStackTrace();
 				}
 			}
+			currentTime = System.currentTimeMillis();
 		}
 	}
 	
@@ -102,12 +109,13 @@ public class Visualizer extends JFrame {
 		long currentTime = System.currentTimeMillis();
 		long dobs = currentTime - lastStatus;
 		System.out.println(String.format(
-					"[%d ms] Shown %d Differents %d Dropped %d Underflow %d FPS %.1f (max %d) Speedup %.2f (goal %.2f)",
+					"[%d ms] Shown %d Computed %d Dropped %d ShownUnique %d Underrun %d FPS %.1f (max %d) Speedup %.2f (goal %.2f)",
 					dobs,
 					displayedFrames,
 					usedFrames,
 					droppedFrames,
-					waits,
+					usedFrames - droppedFrames,
+					underruns,
 					displayedFrames * 1000f / dobs,
 					maxfps,
 					usedFrames * dt * 1000f / dobs,
@@ -116,7 +124,7 @@ public class Visualizer extends JFrame {
 		displayedFrames = 0;
 		droppedFrames = 0;
 		usedFrames = 0;
-		waits = 0;
+		underruns = 0;
 	}
 		
 	
@@ -124,8 +132,10 @@ public class Visualizer extends JFrame {
 		
 		public Vector[] pos;
 		
+		// Initialises Panneau with a copy of pos
 		public Panneau(Vector[] pos){
-			this.pos = pos;
+			this.pos = new Vector[pos.length];
+			System.arraycopy(pos, 0, this.pos, 0, pos.length);
 		}
 		
 		//paintComponent is called by pan.repaint()

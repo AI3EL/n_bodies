@@ -20,12 +20,16 @@ public class Buffer {
 
 	public boolean waitWrite(int frame)
 	{
-		return false;
+		return true;
 	}
 
 	public boolean waitRead()
 	{
-		return false;
+		return true;
+	}
+
+	public boolean pollRead() {
+		return true;
 	}
 
 }

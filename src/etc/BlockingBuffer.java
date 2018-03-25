@@ -61,6 +61,19 @@ public class BlockingBuffer extends Buffer {
 		return waited;
 	}
 
+	@Override
+	public boolean pollRead() {
+		boolean success = false;
+		lock.lock();
+		if((first + 1) % size != last) {
+			first = (first + 1) % size;
+			notFull.signalAll();
+			success = true;
+		}
+		lock.unlock();
+		return success;
+	}
+
 	private int first = 0;
 	private int last = 1;
 	private int lastFrame = 1;
