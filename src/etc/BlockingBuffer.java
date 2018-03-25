@@ -27,9 +27,12 @@ public class BlockingBuffer extends Buffer {
 				lastFrame++;
 				notEmpty.signal();
 			}
-			if(lastFrame == (frame + 1) && last == first) {
+			while(lastFrame == (frame + 1) && last == first) {
 				waited = true;
 				notFull.await();
+				if(lastFrame == (frame + 1) && last == first) {
+					System.out.println("Spurious wakeup !");
+				}
 			}
 		} catch(InterruptedException e) {
 			e.printStackTrace();
@@ -46,7 +49,7 @@ public class BlockingBuffer extends Buffer {
 		try {
 			first = (first + 1) % size;
 			notFull.signalAll();
-			if(first == last) {
+			while(first == last) {
 				waited = true;
 				notEmpty.await();
 			}

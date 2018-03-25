@@ -39,7 +39,7 @@ public class Tester {
 	 */
 	public static void test2b(int nThreads, int bufferSize, int maxTime){
 		n = 2;
-		delta = 0.005f;
+		delta = 1f;
 		bodies = new Body[n];
 		clock = new Clock();
 		buffer = new BlockingBuffer(bufferSize,n);
@@ -60,7 +60,7 @@ public class Tester {
 			threads[i].start();
 		}
 		
-		Visualizer visualizer = new Visualizer(n, delta, maxTime, buffer, WIDTH, HEIGHT);
+		Visualizer visualizer = new Visualizer(n, delta, maxTime, 1000.0f, buffer, WIDTH, HEIGHT);
 	}
 	
 	/*
@@ -68,7 +68,7 @@ public class Tester {
 	 */
 	public static void testGrid(int nThreads, int bufferSize, int maxTime, int width, int height){
 		n = width * height;
-		delta = 1f;
+		delta = 0.5f;
 		bodies = new Body[n];
 		clock = new Clock();
 		buffer = new BlockingBuffer(bufferSize,n);
@@ -97,7 +97,7 @@ public class Tester {
 		Thread negligibleNode = new Thread(new NegligibleNode( (float)0.95, clock, maxTime, isNegligible, bodies, fillTime));
 		negligibleNode.start();
 		
-		Visualizer visualizer = new Visualizer(n, delta, maxTime, buffer, WIDTH, HEIGHT);
+		Visualizer visualizer = new Visualizer(n, delta, maxTime, 10.0f, buffer, WIDTH, HEIGHT);
 		
 	}
 
@@ -106,8 +106,8 @@ public class Tester {
 		/*
 		 * Works well on AI3EL's computer
 		 */
-		testGrid(2,100,10000000,30,30);
-		//test2b(2, 500, 10000000);
+		testGrid(8,100,10000000,30,30);
+		//test2b(1, 500, 10000000);
 	}
 	
 }

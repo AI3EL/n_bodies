@@ -20,10 +20,9 @@ public class Visualizer extends JFrame {
 	float maxTime;
 	long currentTime;
 	long lastTime;
-	int frozenTime;
 	float dt;
 	int maxfps = 200;
-	float speedup = 10.0f;
+	float speedup;
 	int interval;
 	
 	Clock clock;
@@ -37,29 +36,33 @@ public class Visualizer extends JFrame {
 	private int usedFrames = 0;
 	private int waits = 0;
 	private long lastStatus = 0;
-	boolean drop;
 
 	
-	public Visualizer(int n, float delta, float  maxTime, Buffer buffer, int width, int height){
-		pan = new Panneau(buffer.data[0]);
+	public Visualizer(int n, float delta, float  maxTime, float speedup, Buffer buffer, int width, int height){
+		//pan = new Panneau(buffer.data[0]);
+		pan = new Panneau(new Vector[n]);
 		this.dt = delta;
 		this.interval = 1000 / maxfps;
 		this.buffer=buffer;
 		this.lastTime=this.currentTime;
 		this.n = n;
 		this.maxTime=maxTime;
+		this.speedup = speedup;
+
 		this.setTitle("n_bodies");
 		this.setSize(width,height);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setLocationRelativeTo(null);
 		this.setContentPane(pan);
 		this.setVisible(true);
+
 		go();
 	}
 
 	
 	private void go(){
 		startTime = System.currentTimeMillis();
+		boolean drop;
 		while(ownTime < maxTime){
 			currentTime = System.currentTimeMillis();
 			drop = false;
@@ -73,6 +76,7 @@ public class Visualizer extends JFrame {
 					droppedFrames++;
 				drop = true;
 			}
+
 			for(int i=0; i< n; i++){
 				pan.pos[i] = buffer.data[ownTime % buffer.size][i];
 			}
@@ -128,10 +132,10 @@ public class Visualizer extends JFrame {
 		
 		public void paintComponent(Graphics g){
 			//Erase everything
-			g.setColor(Color.white);
-			g.fillRect(0, 0, this.getWidth(), this.getHeight());
-			
 			g.setColor(Color.black);
+			g.fillRect(0, 0, this.getWidth(), this.getHeight());
+
+			g.setColor(Color.white);
 			for(int i=0; i<n ;i++){
 				g.fillOval((int) pos[i].x, (int) pos[i].y, 10, 10);
 			}
