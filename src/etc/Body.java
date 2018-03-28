@@ -22,6 +22,8 @@ public class Body {
 	public Vector speed;
 	public Vector acc;
 	
+	public Vector precPos;
+	
 	public Vector[] forces;
 	public Vector totalForce;
 	
@@ -36,6 +38,7 @@ public class Body {
 		forces = new Vector[n];
 		for(int i=0; i< n; i++)	forces[i] = new Vector();
 		totalForce = new Vector();
+		precPos=pos_;
 	}
 	
 	public void setAll(Body[] others, Force f, float delta, boolean[][] isNegligible, boolean negligibleMode) {
@@ -51,7 +54,8 @@ public class Body {
 			// Is useful so that totalForce is never equal to 0 (otherwise there are concurrent issues)
 			Vector newTotalForce = new Vector();
 			if(!(negligibleMode && isNegligible[this.id][i])){
-				forces[i] = f.exerce(this,others[i]);
+				boolean sameTime = (this.time == others[i].time);
+				forces[i] = f.exerce(this,others[i],sameTime);
 				newTotalForce = newTotalForce.add(forces[i]);
 			}
 			totalForce = newTotalForce;
@@ -71,6 +75,7 @@ public class Body {
 	}
 	
 	public void setPos (float delta) {
+		precPos=pos;
 		pos=pos.add(speed.mul(delta)); // p(t+dt) = p(t) + v(t)*dt		
 	}
 	

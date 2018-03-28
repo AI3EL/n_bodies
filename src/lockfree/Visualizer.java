@@ -47,6 +47,7 @@ public class Visualizer extends JFrame {
 		this.n = n;
 		this.maxTime=maxTime;
 		this.speedup = speedup;
+		
 
 		this.setTitle("n_bodies");
 		this.setSize(width,height);
@@ -87,6 +88,7 @@ public class Visualizer extends JFrame {
 				pan.pos[i] = buffer.data[currentFrame % buffer.size][i];
 			}
 			pan.repaint();
+
 			displayedFrames++;
 
 			if(currentTime - lastStatus > 2000) {
@@ -134,6 +136,7 @@ public class Visualizer extends JFrame {
 		
 		// Initialises Panneau with a copy of pos
 		public Panneau(Vector[] pos){
+
 			this.pos = new Vector[pos.length];
 			System.arraycopy(pos, 0, this.pos, 0, pos.length);
 		}
@@ -141,6 +144,7 @@ public class Visualizer extends JFrame {
 		//paintComponent is called by pan.repaint()
 		
 		public void paintComponent(Graphics g){
+
 			//Erase everything
 			g.setColor(Color.black);
 			g.fillRect(0, 0, this.getWidth(), this.getHeight());

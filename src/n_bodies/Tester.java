@@ -74,7 +74,7 @@ public class Tester {
 	 */
 	public static void testGrid(int nThreads, int bufferSize, int maxTime, int width, int height){
 		n = width * height;
-		delta = 0.01f;
+		delta = 0.1f;
 		bodies = new Body[n];
 		clock = new Clock();
 		buffer = new BlockingBuffer(bufferSize,n);
@@ -103,17 +103,13 @@ public class Tester {
 		Thread negligibleNode = new Thread(new NegligibleNode( (float)0.95, clock, maxTime, isNegligible, bodies, fillTime));
 		negligibleNode.start();
 
-		Visualizer visualizer = new Visualizer(n, delta, maxTime, 1.0f, buffer, WIDTH, HEIGHT);
+		Visualizer visualizer = new Visualizer(n, delta, maxTime, 10.0f, buffer, WIDTH, HEIGHT);
 
 	}
 
 
 	public static void main(String[] args){
-		testGrid(2,100,1000,30,30);
-=======
-		testGrid(8,100,10000000,30,30);
-		//test2b(1, 500, 10000000);
->>>>>>> 56a3f77356a31dfc9279df2b133c6b8bde82dc7f
+		testGrid(2,100,10000,30,30);
 	}
 
 }
