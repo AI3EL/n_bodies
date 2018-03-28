@@ -16,8 +16,9 @@ public class Body {
 	public int id;
 	public int time;
 	public float mass;
+	public float radius;
 	public int n;
-	
+
 	public Vector pos;
 	public Vector speed;
 	public Vector acc;
@@ -27,8 +28,9 @@ public class Body {
 	public Vector[] forces;
 	public Vector totalForce;
 	
-	public Body(int id_, float mass,  Vector pos_, Vector speed_, Vector acc_, int n) {
+	public Body(int time,int id_, float mass, float radius, Vector pos_, Vector speed_, Vector acc_, int n) {
 		this.id=id_;
+		this.time=time;
 		this.mass=mass;
 		pos=pos_;
 		speed=speed_;
@@ -39,15 +41,18 @@ public class Body {
 		for(int i=0; i< n; i++)	forces[i] = new Vector();
 		totalForce = new Vector();
 		precPos=pos_;
+		this.radius=radius;
 	}
 	
 	public void setAll(Body[] others, Force f, float delta, boolean[][] isNegligible, boolean negligibleMode) {
+		
 		setForces(others, f, isNegligible, negligibleMode);
 		setAcc(others, f);
 		setSpeed(delta);
 		setPos(delta);
 		time++;
 	}
+	
 	
 	public void setForces(Body[] others, Force f,  boolean[][] isNegligible, boolean negligibleMode){
 		for (int i=0; i< others.length; i++) {

@@ -11,9 +11,9 @@ import java.util.concurrent.locks.*;
  */
 
 public class BlockingBuffer extends Buffer {
-	public BlockingBuffer(int size, int n)
+	public BlockingBuffer(int size, int n, Vector[] pos, float[] radiuses)
 	{
-		super(size, n);
+		super(size, n, pos, radiuses);
 	}
 
 	@Override

@@ -16,7 +16,6 @@ import etc.Buffer;
 public class Visualizer extends JFrame {
 	
 	private Panneau pan;
-	int n;
 	float maxTime;
 	long currentTime;
 	long lastTime;
@@ -38,13 +37,12 @@ public class Visualizer extends JFrame {
 	private long lastStatus = 0;
 
 	
-	public Visualizer(int n, float delta, float  maxTime, float speedup, Buffer buffer, int width, int height){
-		pan = new Panneau(buffer.data[0]);
+	public Visualizer(float delta, float  maxTime, float speedup, Buffer buffer, int width, int height){
+		pan = new Panneau(buffer.pos[0], buffer.radiuses[0], buffer.nBody[0],0);
 		this.dt = delta;
 		this.interval = 1000 / maxfps;
 		this.buffer=buffer;
 		this.lastTime=this.currentTime;
-		this.n = n;
 		this.maxTime=maxTime;
 		this.speedup = speedup;
 		
@@ -83,9 +81,12 @@ public class Visualizer extends JFrame {
 			if(retrieved > 1) {
 				droppedFrames += (retrieved - 1);
 			}
-
-			for(int i=0; i< n; i++){
-				pan.pos[i] = buffer.data[currentFrame % buffer.size][i];
+			
+			pan.frameNum = currentFrame % buffer.size;
+			pan.n = buffer.nBody[currentFrame % buffer.size];
+			for(int i=0; i<pan.n ; i++){
+				pan.pos[i] = buffer.pos[currentFrame % buffer.size][i];
+				pan.radiuses[i] = buffer.radiuses[currentFrame % buffer.size][i];
 			}
 			pan.repaint();
 
@@ -104,6 +105,7 @@ public class Visualizer extends JFrame {
 				}
 			}
 			currentTime = System.currentTimeMillis();
+			//if(displayedFrames > 50) return;
 		}
 	}
 	
@@ -133,25 +135,31 @@ public class Visualizer extends JFrame {
 	private class Panneau extends JPanel{
 		
 		public Vector[] pos;
+		public float[] radiuses;
+		public int n;
+		public int frameNum; // For DEBUG
+
 		
 		// Initialises Panneau with a copy of pos
-		public Panneau(Vector[] pos){
-
+		public Panneau(Vector[] pos, float[] radiuses, int n, int frameNum){
+			this.radiuses = new float[radiuses.length];
 			this.pos = new Vector[pos.length];
-			System.arraycopy(pos, 0, this.pos, 0, pos.length);
+			this.n=n;
+			this.frameNum = frameNum;
+			System.arraycopy(pos, 0, this.pos, 0, n);
+			System.arraycopy(radiuses, 0, this.radiuses, 0, n);
+
 		}
 		
 		//paintComponent is called by pan.repaint()
 		
 		public void paintComponent(Graphics g){
-
-			//Erase everything
 			g.setColor(Color.black);
 			g.fillRect(0, 0, this.getWidth(), this.getHeight());
 
 			g.setColor(Color.white);
 			for(int i=0; i<n ;i++){
-				g.fillOval((int) pos[i].x, (int) pos[i].y, 10, 10);
+				g.fillOval((int) pos[i].x, (int) pos[i].y, (int) radiuses[i], (int) radiuses[i]);
 			}
 		}					
 	}
