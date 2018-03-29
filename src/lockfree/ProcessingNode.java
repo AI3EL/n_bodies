@@ -67,10 +67,12 @@ public class ProcessingNode implements Runnable {
 						if( buffer.bodies[currentTime % buffer.size][curBody].time > currentTime )	break;	
 						else{
 							//System.out.println(bodies[curBody].toString());
-							Body updatedBody = new Body(currentTime, curBody, buffer.bodies[currentTime % buffer.size][curBody].mass, buffer.bodies[currentTime % buffer.size][curBody].radius, buffer.bodies[currentTime % buffer.size][curBody].pos, buffer.bodies[currentTime % buffer.size][curBody].speed, buffer.bodies[currentTime % buffer.size][curBody].acc, buffer.nBody[currentTime % buffer.size]);
+							Body updatedBody = new Body(currentTime, curBody, buffer.bodies[currentTime % buffer.size][curBody].mass, buffer.bodies[currentTime % buffer.size][curBody].q, buffer.bodies[currentTime % buffer.size][curBody].radius, buffer.bodies[currentTime % buffer.size][curBody].pos, buffer.bodies[currentTime % buffer.size][curBody].speed, buffer.bodies[currentTime % buffer.size][curBody].acc, buffer.nBody[currentTime % buffer.size]);
 							if(buffer.bodies[currentTime % buffer.size][curBody].time % fillTime == 0)	updatedBody.setAll(buffer.bodies[currentTime % buffer.size], force, delta, isNegligible, false);
 							else	updatedBody.setAll(buffer.bodies[currentTime % buffer.size], force, delta, isNegligible, true);
 							buffer.bodies[(currentTime + 1 )% buffer.size][curBody] = updatedBody;
+							System.out.println(updatedBody.toString());
+
 						}
 					}finally {
 						//System.out.println("Unlock by thread :" + Thread.currentThread().getId() + " i : " + curBody + "bodyTime = " + buffer.bodies[currentTime%buffer.size][curBody].time);
@@ -150,37 +152,42 @@ public class ProcessingNode implements Runnable {
 		Body[] newBodies = new Body[newNBody];
 		if(newNBody != oldNBody)System.out.println("Old :" + oldNBody + "New : " + newNBody + "Time :" + curTime);
 		for(int i=0; i<newNBody;i++){
-			
+			Vector averagePos = new Vector();
+			float maxMass=bodies[roots[i]].mass;
+			float nMaxMass=0.0f;
+			for(int j=0; j<oldNBody;j++){
+				if(collisionClasses[j] == roots[i] && maxMass < bodies[j].mass)		maxMass=bodies[j].mass;
+			}
+			for(int j=0; j<oldNBody;j++){
+				if(collisionClasses[j] == roots[i] && maxMass == bodies[j].mass){
+					averagePos=averagePos.add(bodies[j].pos);
+					nMaxMass++;
+				}
+			}
+			averagePos = averagePos.mul(1/nMaxMass);
+
 			float totalMass=0;
+			float totalQ=0;
 			float totalSquareRadius=0;
-			Vector averagePos = bodies[roots[i]].pos;
 			Vector p = new Vector();
 			int nInClass=0;
 			
 			for(int j=0; j<oldNBody;j++){
 				if(collisionClasses[j] == roots[i])	nInClass++;
 			}
-			if(nInClass > 1){
-				System.out.println("Root index " + roots[i] + " nInClass " + nInClass  );
-			}
+			
 			for(int j=0; j<oldNBody;j++){
 				if(collisionClasses[j] == roots[i]){
-					if(nInClass > 1){
-						System.out.println("Body n " + j + " Mass : " +bodies[j].mass +  " PosX : " +bodies[j].pos.x+  " PosY : " +bodies[j].pos.y);
-					}
 					totalMass+=bodies[j].mass;
+					totalQ+=bodies[j].q;
 					totalSquareRadius+= (bodies[j].radius * bodies[j].radius);
-					Vector tempVec = bodies[j].pos.sub(bodies[roots[i]].pos);
-
-					averagePos = averagePos.add(tempVec.mul(1/(float)nInClass));
-
 					p=p.add(bodies[j].speed.mul(bodies[j].mass));
 				}
 				
 			}
 			//the speed of newBody is derives from  p conservation
 			totalSquareRadius =  (float) Math.sqrt(totalSquareRadius);
-			newBodies[i] = new Body(bodies[0].time,i, totalMass, totalSquareRadius, averagePos, p.mul(1/(float)totalMass), new Vector(), newNBody);
+			newBodies[i] = new Body(bodies[0].time,i, totalMass,totalQ, totalSquareRadius, averagePos, p.mul(1/(float)totalMass), new Vector(), newNBody);
 			if(nInClass > 1){
 				System.out.println("Global : mass "+ newBodies[i].mass + " posX "+ newBodies[i].pos.x+  " PosY : " +newBodies[i].pos.y);
 			}

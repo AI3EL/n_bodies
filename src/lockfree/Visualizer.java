@@ -165,13 +165,7 @@ public class Visualizer extends JFrame {
 
 			g.setColor(Color.white);
 			for(int i=0; i<n ;i++){
-				try{
-					g.fillOval((int) (pos[i].x - radiuses[i]) , (int) (pos[i].y - radiuses[i]), (int) (2*radiuses[i]), (int) (2*radiuses[i]));
-				}
-				catch(java.lang.NullPointerException e){
-					System.out.println("n :" + n);
-					return;
-				}
+				g.fillOval((int) (pos[i].x - radiuses[i]) , (int) (pos[i].y - radiuses[i]), (int) (2*radiuses[i]), (int) (2*radiuses[i]));
 			}
 		}					
 	}

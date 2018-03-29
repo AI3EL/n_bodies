@@ -16,6 +16,7 @@ public class Body {
 	public int id;
 	public int time;
 	public float mass;
+	public float q;
 	public float radius;
 	public int n;
 
@@ -28,7 +29,7 @@ public class Body {
 	public Vector[] forces;
 	public Vector totalForce;
 	
-	public Body(int time,int id_, float mass, float radius, Vector pos_, Vector speed_, Vector acc_, int n) {
+	public Body(int time,int id_, float mass, float q, float radius, Vector pos_, Vector speed_, Vector acc_, int n) {
 		this.id=id_;
 		this.time=time;
 		this.mass=mass;
@@ -42,6 +43,7 @@ public class Body {
 		totalForce = new Vector();
 		precPos=pos_;
 		this.radius=radius;
+		this.q=q;
 	}
 	
 	public void setAll(Body[] others, Force f, float delta, boolean[][] isNegligible, boolean negligibleMode) {
@@ -59,8 +61,7 @@ public class Body {
 			// Is useful so that totalForce is never equal to 0 (otherwise there are concurrent issues)
 			Vector newTotalForce = new Vector();
 			if(!(negligibleMode && isNegligible[this.id][i])){
-				boolean sameTime = (this.time == others[i].time);
-				forces[i] = f.exerce(this,others[i],sameTime);
+				forces[i] = f.exerce(this,others[i]);
 				newTotalForce = newTotalForce.add(forces[i]);
 			}
 			totalForce = newTotalForce;
@@ -88,6 +89,7 @@ public class Body {
 		String result = "Position : "+ "("+ String.valueOf(pos.x) + "," + String.valueOf(pos.y) + ")";
 		result += " / Speed : "+ "("+ String.valueOf(speed.x) + "," + String.valueOf(speed.y) + ")";
 		result += " / Acc : "+ "("+ String.valueOf(acc.x) + "," + String.valueOf(acc.y) + ")";
+		result += " / Id : "+ id;
 		return result;
 	}
 }
