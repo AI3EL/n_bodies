@@ -10,20 +10,20 @@ import etc.Vector;
  */
 
 public class Buffer {
-	public Vector[][] pos;
-	public float[][] radiuses;
+	public Body[][] bodies;
 	public int[] nBody;
 	public int size;
 	public boolean[] mergeAlreadyDone;
+	public boolean[] updated[];
 	
-	public Buffer(int size, int n, Vector[] pos, float radiuses[]){
-		this.pos = new Vector[size][n];
-		this.radiuses = new float[size][n];
+	public Buffer(int size, int n, Body[] bodies){
+		this.bodies = new Body[size][n];
+		this.bodies[0] = bodies; 
 		this.nBody = new int[size];
+		nBody[0] = n;
 		this.size=size;
 		this.mergeAlreadyDone = new boolean[size];
-		this.pos[0] = pos;
-		this.radiuses[0] = radiuses;
+		this.updated = new boolean[size][n];
 	}
 
 	public boolean waitWrite(int frame)

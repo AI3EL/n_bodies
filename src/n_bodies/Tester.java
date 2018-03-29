@@ -7,6 +7,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import lockfree.Clock;
 import lockfree.NegligibleNode;
 import lockfree.ProcessingNode;
+import lockfree.SafeCounter;
 import lockfree.Visualizer;
 
 import etc.Body;
@@ -53,29 +54,22 @@ public class Tester {
 		threads = new Thread[nThreads];
 		force = new GravitationnalForce();
 		boolean[][] isNegligible = new boolean[n][n];
-		Vector[] initBuffPos = new Vector[n];
-		float[] initBuffRadiuses = new float[n];
-		Lock mergeLock = new ReentrantLock();
 
 		int fillTime = 100;
 		
-		int[] nBody = new int[1];
-		nBody[0] = n;
 
 		bodies[0] = new Body(0,0, 100, 10, new Vector(10,10), new Vector(0,0), new Vector(0,0), n);
 		bodies[1] = new Body(0,1, 100, 10, new Vector(30,30), new Vector(0,0), new Vector(0,0), n);
 
-		for(int i=0; i< n ; i++){
-			initBuffPos[i] = bodies[i].pos;
-			initBuffRadiuses[i] = bodies[i].radius;
-		}
-		buffer = new BlockingBuffer(bufferSize,n, initBuffPos, initBuffRadiuses );
+		buffer = new BlockingBuffer(bufferSize,n, bodies );
+		SafeCounter counter = new SafeCounter(0);
+
 		for(int i=0; i< nThreads; i++){
-			threads[i] = new Thread(new ProcessingNode(nBody,bodies, clock, i, force,delta, buffer, maxTime, isNegligible, fillTime, mergeLock));
+			threads[i] = new Thread(new ProcessingNode(counter, clock, i, force,delta, buffer, maxTime, isNegligible, fillTime));
 			threads[i].start();
 		}
 
-		Visualizer visualizer = new Visualizer(delta, maxTime, 10.0f, buffer, WIDTH, HEIGHT);
+		//Visualizer visualizer = new Visualizer(delta, maxTime, 1.0f, buffer, WIDTH, HEIGHT);
 	}
 
 	/*
@@ -91,9 +85,6 @@ public class Tester {
 		int xBegin = WIDTH/2 - (width * 30)/2 ;
 		int yBegin = HEIGHT/2 - (height * 30)/2 ;
 		boolean[][] isNegligible = new boolean[n][n];
-		Vector[] initBuffPos = new Vector[n];
-		float[] initBuffRadiuses = new float[n];
-		Lock mergeLock = new ReentrantLock();
 
 		int fillTime = 50;
 
@@ -102,35 +93,28 @@ public class Tester {
 				bodies[j + i*height] = new Body(0,j+i*height, 1, 10, new Vector(xBegin + (i+1)*30, yBegin + (j+1)*30), new Vector(0,0), new Vector(0,0), n);
 			}
 		}
-		
-		for(int i=0; i< n ; i++){
-			initBuffPos[i] = bodies[i].pos;
-			initBuffRadiuses[i] = bodies[i].radius;
-		}
-		buffer = new BlockingBuffer(bufferSize,n, initBuffPos, initBuffRadiuses );
 
-		
+		buffer = new BlockingBuffer(bufferSize,n,bodies );
 
-		int[] nBody = new int[1];
-		nBody[0] = n;
+		SafeCounter counter = new SafeCounter(0);
 		
 		for(int i=0; i< nThreads; i++){
 			int first = (i * n) / nThreads;
-			threads[i] = new Thread(new ProcessingNode(nBody,bodies, clock, first, force, delta, buffer, maxTime, isNegligible, fillTime, mergeLock));
+			threads[i] = new Thread(new ProcessingNode(counter, clock, first, force, delta, buffer, maxTime, isNegligible, fillTime));
 			threads[i].start();
 		}
 
 		//Thread negligibleNode = new Thread(new NegligibleNode( (float)0.95, clock, maxTime, isNegligible, bodies, fillTime));
 		//negligibleNode.start();
 
-		//Visualizer visualizer = new Visualizer(delta, maxTime, 5.0f, buffer, WIDTH, HEIGHT);
+		Visualizer visualizer = new Visualizer(delta, maxTime, 10.0f, buffer, WIDTH, HEIGHT);
 
 	}
 
 
 	public static void main(String[] args){
 		//test2b(1,1000,500);
-		testGrid(2,10000,10,2,1);
+		testGrid(2,10000,500,10,10);
 	}
 
 }
