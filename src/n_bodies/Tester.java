@@ -17,6 +17,7 @@ import lockfree.LockfreeEngine;
 import lockfree.Visualizer;
 
 import systems.PSystem;
+import systems.TwoBodiesSystem;
 import systems.GridSystem;
 import systems.SolarSystem;
 
@@ -43,33 +44,21 @@ public class Tester {
 	/*
 	 * Test with 2 bodies, of mass 1
 	 */
-	/*
 	public static void test2b(int nThreads, int bufferSize, int maxTime){
-		n = 2;
-		delta = 1.0f;
-		bodies = new Body[n];
-		clock = new Clock();
-		threads = new Thread[nThreads];
-		force = new GravitationnalForce();
-		boolean[][] isNegligible = new boolean[n][n];
+		delta = 0.1f;
 
-		int fillTime = 100;
-		
+		PSystem system = new TwoBodiesSystem();
+		int n = system.getBodies().length;
 
-		bodies[0] = new Body(0,0, 100, 10, new Vector(10,10), new Vector(0,0), new Vector(0,0), n);
-		bodies[1] = new Body(0,1, 100, 10, new Vector(30,30), new Vector(0,0), new Vector(0,0), n);
+		Buffer buffer = new BlockingBuffer(bufferSize,n);
+		system.initBuffer(buffer);
 
-		buffer = new BlockingBuffer(bufferSize,n, bodies );
-		SafeCounter counter = new SafeCounter(0);
+		Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
 
-		for(int i=0; i< nThreads; i++){
-			threads[i] = new Thread(new ProcessingNode(counter, clock, i, force,delta, buffer, maxTime, isNegligible, fillTime));
-			threads[i].start();
-		}
-
-		//Visualizer visualizer = new Visualizer(delta, maxTime, 1.0f, buffer, WIDTH, HEIGHT);
+		engine.start();
+		Visualizer visualizer = new Visualizer(delta, maxTime, 10.0f, buffer, WIDTH, HEIGHT);
+		engine.join();
 	}
-	*/
 
 	/*
 	 * Test with width*height bodies on a centered grid, each has mass 1
