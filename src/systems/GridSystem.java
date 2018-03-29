@@ -14,7 +14,7 @@ public class GridSystem extends PSystem {
 
 		for(int i=0; i< width ; i++){
 			for(int j=0; j<height;j++){
-				bodies[j + i*height] = new Body(0,j+i*height, 1, 10,
+				bodies[j + i*height] = new Body(0,j+i*height, 1, 5,
 						new Vector(xBegin + (i+1)*30, yBegin + (j+1)*30),
 						new Vector(0,0), new Vector(0,0), n);
 			}

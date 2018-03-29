@@ -12,24 +12,24 @@ import java.util.Arrays;
  */
 
 public class Buffer {
-	public Vector[][] pos;
-	public float[][] radiuses;
+	public Body[][] bodies;
 	public int[] nBody;
 	public int size;
 	public boolean[] mergeAlreadyDone;
+	public boolean[] updated[];
 	
-	public Buffer(int size, int n) {
-		this.pos = new Vector[size][n];
-		this.radiuses = new float[size][n];
+	public Buffer(int size, int n){
+		this.bodies = new Body[size][n];
 		this.nBody = new int[size];
-		Arrays.fill(this.nBody, n);
+		nBody[0] = n;
 		this.size=size;
 		this.mergeAlreadyDone = new boolean[size];
+		this.updated = new boolean[size][n];
 	}
-	public Buffer(int size, int n, Vector[] pos, float radiuses[]){
+
+	public Buffer(int size, int n, Body[] bodies){
 		this(size, n);
-		System.arraycopy(pos, 0, this.pos[0], 0, n);
-		System.arraycopy(radiuses, 0, this.radiuses[0], 0, n);
+		System.arraycopy(bodies, 0, this.bodies[0], 0, n);
 	}
 
 	public boolean waitWrite(int frame)

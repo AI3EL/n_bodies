@@ -8,8 +8,7 @@ public class PSystem {
 
 	public void initBuffer(Buffer buffer) {
 		for(int i=0; i< n ; i++){
-			buffer.pos[0][i] = bodies[i].pos;
-			buffer.radiuses[0][i] = bodies[i].radius;
+			buffer.bodies[0][i] = bodies[i];
 		}
 	}
 

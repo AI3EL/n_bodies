@@ -55,7 +55,7 @@ public class Body {
 	
 	
 	public void setForces(Body[] others, Force f,  boolean[][] isNegligible, boolean negligibleMode){
-		for (int i=0; i< others.length; i++) {
+		for (int i=0; i< n; i++) {
 			// Is useful so that totalForce is never equal to 0 (otherwise there are concurrent issues)
 			Vector newTotalForce = new Vector();
 			if(!(negligibleMode && isNegligible[this.id][i])){

@@ -17,21 +17,20 @@ import etc.Buffer;
 public class NegligibleNode implements Runnable {
 	
 	boolean[][] isNegligible;
-	int n, fillTime;
-	long lastTime;
+	int fillTime;
+	int lastTime;
 	Clock clock;
 	int maxTime;
-	Body[] bodies;
+	Buffer buffer;
 	float err;
 	
-	public NegligibleNode(float err, Clock clock, int maxTime, boolean[][] isNegligible, Body[] bodies, int fillTime){
+	public NegligibleNode(float err, Clock clock, int maxTime, boolean[][] isNegligible, Buffer buffer, int fillTime){
 		this.isNegligible = isNegligible;
-		n = bodies.length;
 		lastTime = clock.time.get();
 		this.fillTime=fillTime;
 		this.maxTime=maxTime;
 		this.err=err;
-		this.bodies=bodies;
+		this.buffer=buffer;
 		this.clock = clock;
 	}
 	
@@ -40,13 +39,15 @@ public class NegligibleNode implements Runnable {
 		while(clock.time.get()<maxTime){			
 			if(clock.time.get() - lastTime < fillTime){
 				try {
-					Thread.sleep(100); // To be changed !
+					Thread.sleep(10); // To be optimized !
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 			}
 			else {
 				lastTime=clock.time.get();
+				final Body[] bodies = buffer.bodies[lastTime%buffer.size];
+				int n = buffer.nBody[lastTime % buffer.size];
 				int bi = (int) (Math.random() * n);
 				int bj = (int) (Math.random() * n);
 				for(int i=0; i<n;i++){

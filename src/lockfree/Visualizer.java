@@ -38,7 +38,13 @@ public class Visualizer extends JFrame {
 
 	
 	public Visualizer(float delta, float  maxTime, float speedup, Buffer buffer, int width, int height){
-		pan = new Panneau(buffer.pos[0], buffer.radiuses[0], buffer.nBody[0],0);
+		Vector[] posArg = new Vector[buffer.nBody[0]];
+		float[] radiusArg = new float[buffer.nBody[0]];
+		for(int i=0; i< buffer.nBody[0]; i++){
+			posArg[i] = buffer.bodies[0][i].pos;
+			radiusArg[i] = buffer.bodies[0][i].radius;
+		}
+		pan = new Panneau(posArg, radiusArg, buffer.nBody[0],0);
 		this.dt = delta;
 		this.interval = 1000 / maxfps;
 		this.buffer=buffer;
@@ -83,11 +89,10 @@ public class Visualizer extends JFrame {
 			}
 			
 			pan.frameNum = currentFrame % buffer.size;
-			System.out.println("Printing frame " + currentFrame);
 			pan.n = buffer.nBody[currentFrame % buffer.size];
 			for(int i=0; i<pan.n ; i++){
-				pan.pos[i] = buffer.pos[currentFrame % buffer.size][i];
-				pan.radiuses[i] = buffer.radiuses[currentFrame % buffer.size][i];
+				pan.pos[i] = buffer.bodies[currentFrame % buffer.size][i].pos;
+				pan.radiuses[i] = buffer.bodies[currentFrame % buffer.size][i].radius;
 			}
 			pan.repaint();
 
@@ -160,7 +165,13 @@ public class Visualizer extends JFrame {
 
 			g.setColor(Color.white);
 			for(int i=0; i<n ;i++){
-				g.fillOval((int) pos[i].x, (int) pos[i].y, (int) radiuses[i], (int) radiuses[i]);
+				try{
+					g.fillOval((int) (pos[i].x - radiuses[i]) , (int) (pos[i].y - radiuses[i]), (int) (2*radiuses[i]), (int) (2*radiuses[i]));
+				}
+				catch(java.lang.NullPointerException e){
+					System.out.println("n :" + n);
+					return;
+				}
 			}
 		}					
 	}

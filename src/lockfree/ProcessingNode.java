@@ -33,12 +33,8 @@ public class ProcessingNode implements Runnable {
 	int fillTime; // Each fillTime timesteps, the node puts in forces[][] the resultant forces of each
 	boolean[][] isNegligible;
 	Lock mergeLock;
+	SafeCounter counter;
 	int[] nBody; // Size one, for reference 
-
-	/* ???
-	Vector[][] forces;
-	Vector[] totalForces;
-	*/
 
 	int first;
 	
@@ -55,11 +51,7 @@ public class ProcessingNode implements Runnable {
 		this.fillTime = engine.fillTime;
 		this.nBody = engine.nBody; 
 		this.mergeLock = engine.mergeLock;
-
-		/* ???
-		this.forces=forces;
-		this.totalForces=totalForces;
-		*/
+		this.counter = engine.counter;
 
 		this.first=first;
 	}
@@ -69,73 +61,81 @@ public class ProcessingNode implements Runnable {
 		int currentTime = clock.time.get();
 		//maxTime - 1 because body[i].time is incremented in the loop
 		while(currentTime < maxTime-1){
-			boolean increment = true;
-			for(int i=0; i< nBody[0]; i++){
-				int curBody = (i+first) % nBody[0];
+			for(int i=0; i< buffer.nBody[currentTime % buffer.size]; i++){
+				int curBody = (i+first) % buffer.nBody[currentTime % buffer.size];
 				//System.out.println("curBody : " + curBody);
-				if(currentTime == bodies[curBody].time)	increment = false;
+				if(buffer.updated[currentTime % buffer.size][curBody])	continue;
 				// tryLock() tries to take the lock, if no continues
 				// There is an alternative that tries for a certain amount of time before giving up
 				
 				// Need to think at whether we can use currentTime or time.get() ...
-				if ((currentTime == bodies[curBody].time) && bodies[curBody].lock.tryLock()){	
+				counter.increment();
+				if(buffer.bodies[currentTime % buffer.size][curBody].lock.tryLock()){
 					//Lock is locked if and only if we enter the try
 					try{
-						if( bodies[curBody].time > currentTime )	break;	
-						else{
-							//DEBUG :
-							System.out.println("LOCKING thread :" + Thread.currentThread().getId() + " i : " + curBody + "bodyTime = " + bodies[curBody].time+ "currentTime" + currentTime);
-							System.out.println(bodies[curBody].toString());
-							if(bodies[curBody].time % fillTime == 0)	bodies[curBody].setAll(bodies, force, delta, isNegligible, false);
-							else	bodies[curBody].setAll(bodies, force, delta, isNegligible, true);
-
-							buffer.pos[bodies[curBody].time % buffer.size][curBody]=bodies[curBody].pos;
-							buffer.radiuses[bodies[curBody].time % buffer.size][curBody]=bodies[curBody].radius;
-						}
 						
+						//System.out.println("LOCKING thread :" + Thread.currentThread().getId() + " i : " + curBody + "bodyTime = " + buffer.bodies[currentTime % buffer.size][curBody].time+ "currentTime" + currentTime);
+						
+						// In case we entered just after someone has finished the job
+						if( buffer.bodies[currentTime % buffer.size][curBody].time > currentTime )	break;	
+						else{
+							//System.out.println(bodies[curBody].toString());
+							Body updatedBody = new Body(currentTime, curBody, buffer.bodies[currentTime % buffer.size][curBody].mass, buffer.bodies[currentTime % buffer.size][curBody].radius, buffer.bodies[currentTime % buffer.size][curBody].pos, buffer.bodies[currentTime % buffer.size][curBody].speed, buffer.bodies[currentTime % buffer.size][curBody].acc, buffer.nBody[currentTime % buffer.size]);
+							if(buffer.bodies[currentTime % buffer.size][curBody].time % fillTime == 0)	updatedBody.setAll(buffer.bodies[currentTime % buffer.size], force, delta, isNegligible, false);
+							else	updatedBody.setAll(buffer.bodies[currentTime % buffer.size], force, delta, isNegligible, true);
+							buffer.bodies[(currentTime + 1 )% buffer.size][curBody] = updatedBody;
+						}
 					}finally {
-						System.out.println("Unlock by thread :" + Thread.currentThread().getId() + " i : " + curBody + "bodyTime = " + bodies[curBody].time);
-						bodies[curBody].lock.unlock();
+						//System.out.println("Unlock by thread :" + Thread.currentThread().getId() + " i : " + curBody + "bodyTime = " + buffer.bodies[currentTime%buffer.size][curBody].time);
+						buffer.updated[currentTime % buffer.size][curBody] = true;
+						buffer.updated[(currentTime + 1 )% buffer.size][curBody] = false;
+						buffer.bodies[currentTime % buffer.size][curBody].lock.unlock();
 					}
 				}
-			}
+				counter.decrement();
+			}	//for
 			
-			if(increment)	{
-				mergeLock.lock();
-				try{
-					// Useful so that only one thread does detectCollisions
-					if(!buffer.mergeAlreadyDone[currentTime % buffer.size]){
-						buffer.nBody[(currentTime + 1) % buffer.size] = nBody[0];	
-
-						System.out.println("Entered Lock : Thread : " + Thread.currentThread().getId() +"clockTime : "+clock.time.get());
-						detectCollisions();
-						System.out.println("nBody : " + nBody[0]);
-						System.out.println("time :" + clock.time.get());
-						buffer.mergeAlreadyDone[clock.time.get() % buffer.size] = true;
-						buffer.mergeAlreadyDone[(clock.time.get() + 1) % buffer.size] = false;	//For the next time
-					}
-				} finally{ mergeLock.unlock();}
-				buffer.waitWrite(currentTime + 1);
-				if(clock.time.compareAndSet(currentTime,currentTime+1)){
-					System.out.println("Time has changed : Thread : " + Thread.currentThread().getId() +"clockTime : "+clock.time.get());
-				}
+			counter.lock.lock();
+			if(counter.get()!=0)	counter.isNull.awaitUninterruptibly();
+			
+			buffer.waitWrite(currentTime); //Many threads will pass by here
+			// Was down detectCollisino and with currentTIme + 1
+			if(clock.time.compareAndSet(currentTime,currentTime+1)){
+				//System.out.println("Time has changed : Thread : " + Thread.currentThread().getId() +"clockTime : "+clock.time.get());
 			}
 			currentTime = clock.time.get();
+			//DetectCollisions will behave on the new Posittions that have been just calculated
+			//DetectCollisions must be done when all positions have been set for this time -> counter
+			// When a Thread arrives here it means that for each body : either he was set, either someone entered the lock
+			
+			try{
+				// Useful so that only one thread does detectCollisions
+				if(!buffer.mergeAlreadyDone[currentTime % buffer.size]){
+					//System.out.println("Entered Lock d Thread : " + Thread.currentThread().getId() +"clockTime : "+clock.time.get());
+					detectCollisions(currentTime);
+					//System.out.println("nBody : " + buffer.nBody[currentTime % buffer.size]);
+					//System.out.println("Clocktime :" + clock.time.get());
+					buffer.mergeAlreadyDone[clock.time.get() % buffer.size] = true;
+					buffer.mergeAlreadyDone[(clock.time.get() + 1) % buffer.size] = false;	//For the next time
+				}
+			} finally{ counter.lock.unlock();}
+			
+			first = first * buffer.nBody[(currentTime - 1 )% buffer.size] / buffer.nBody[(currentTime - 1 )% buffer.size];
 		}
 	}
 	
 	//updates collisioncCasses, NOT Thread Safe
-	public void detectCollisions(){
-		System.out.println("BEGIN of detectedCollisions Thread : " + Thread.currentThread().getId());
-		boolean[] classAssigned = new boolean[nBody[0]]; // Initializes at false
-		int[] collisionClasses = new int[nBody[0]];
+	public void detectCollisions(int curTime){
+		int oldNBody = buffer.nBody[(curTime-1)%buffer.size];
+		Body[] bodies = buffer.bodies[curTime%buffer.size];
+		boolean[] classAssigned = new boolean[oldNBody]; // Initializes at false
+		int[] collisionClasses = new int[oldNBody];
 		
 		// At the end of this block, collisionClasses[i] contains the "root" of the collisionClass of i
-		for(int i=0; i<nBody[0]; i++)		collisionClasses[i]=i;
-		for(int i=0; i<nBody[0]; i++){
-			if(classAssigned[i])	continue;
-			for(int j=0; j<nBody[0];j++){
-				if((!classAssigned[j])&& (bodies[i].pos.distance(bodies[j].pos) <= bodies[i].radius + bodies[j].radius) ){
+		for(int i=0; i<oldNBody; i++)		collisionClasses[i]=i;
+		for(int i=0; i<oldNBody; i++){
+			for(int j=0; j<oldNBody;j++){
+				if((i!=j) && (!classAssigned[j])&& (bodies[i].pos.distance(bodies[j].pos) <= bodies[i].radius + bodies[j].radius) ){
 					collisionClasses[j] = collisionClasses[i];
 					if(collisionClasses[i] == -1) collisionClasses[i]=i;
 				}
@@ -144,14 +144,14 @@ public class ProcessingNode implements Runnable {
 		
 		//Computes newNBody
 		int newNBody=0;
-		for(int i=0; i<nBody[0]; i++){
+		for(int i=0; i<oldNBody; i++){
 			if(collisionClasses[i] == i)	newNBody++;
 		}
 		
 		//Computes the roots of the equivalence classes
 		int[] roots= new int[newNBody];
 		int temp=0;
-		for(int i=0; i<nBody[0]; i++){
+		for(int i=0; i<oldNBody; i++){
 			if(collisionClasses[i] == i){
 				roots[temp] = i;
 				temp++;
@@ -161,6 +161,7 @@ public class ProcessingNode implements Runnable {
 		
 		//Creates and fill newBodies
 		Body[] newBodies = new Body[newNBody];
+		if(newNBody != oldNBody)System.out.println("Old :" + oldNBody + "New : " + newNBody + "Time :" + curTime);
 		for(int i=0; i<newNBody;i++){
 			
 			float totalMass=0;
@@ -169,11 +170,17 @@ public class ProcessingNode implements Runnable {
 			Vector p = new Vector();
 			int nInClass=0;
 			
-			for(int j=0; j<nBody[0];j++){
+			for(int j=0; j<oldNBody;j++){
 				if(collisionClasses[j] == roots[i])	nInClass++;
 			}
-			for(int j=0; j<nBody[0];j++){
+			if(nInClass > 1){
+				System.out.println("Root index " + roots[i] + " nInClass " + nInClass  );
+			}
+			for(int j=0; j<oldNBody;j++){
 				if(collisionClasses[j] == roots[i]){
+					if(nInClass > 1){
+						System.out.println("Body n " + j + " Mass : " +bodies[j].mass +  " PosX : " +bodies[j].pos.x+  " PosY : " +bodies[j].pos.y);
+					}
 					totalMass+=bodies[j].mass;
 					totalSquareRadius+= (bodies[j].radius * bodies[j].radius);
 					Vector tempVec = bodies[j].pos.sub(bodies[roots[i]].pos);
@@ -182,16 +189,16 @@ public class ProcessingNode implements Runnable {
 
 					p=p.add(bodies[j].speed.mul(bodies[j].mass));
 				}
+				
 			}
 			//the speed of newBody is derives from  p conservation
 			totalSquareRadius =  (float) Math.sqrt(totalSquareRadius);
 			newBodies[i] = new Body(bodies[0].time,i, totalMass, totalSquareRadius, averagePos, p.mul(1/(float)totalMass), new Vector(), newNBody);
-			
-			// Should we update acc here or not ? 
+			if(nInClass > 1){
+				System.out.println("Global : mass "+ newBodies[i].mass + " posX "+ newBodies[i].pos.x+  " PosY : " +newBodies[i].pos.y);
+			}
 		}
-		bodies= newBodies;
-		nBody[0]=newNBody;
-		System.out.println("END of detectedCollisions Thread : " + Thread.currentThread().getId());
-		
+		buffer.bodies[curTime%buffer.size] = newBodies;	
+		buffer.nBody[curTime%buffer.size]=newNBody;
 	}
 }
