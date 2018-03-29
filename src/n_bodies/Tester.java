@@ -39,13 +39,11 @@ public class Tester {
 	static int WIDTH = 1200;
 	static int HEIGHT = 800;
 
-	static float delta;
-
 	/*
 	 * Test with 2 bodies, of mass 1
 	 */
 	public static void test2b(int nThreads, int bufferSize, int maxTime){
-		delta = 0.1f;
+		float delta = 0.1f;
 
 		PSystem system = new TwoBodiesSystem();
 		int n = system.getBodies().length;
@@ -64,7 +62,7 @@ public class Tester {
 	 * Test with width*height bodies on a centered grid, each has mass 1
 	 */
 	public static void testGrid(int nThreads, int bufferSize, int maxTime, int width, int height){
-		delta = 1.0f;
+		float delta = 0.1f;
 
 		PSystem system = new GridSystem(width, height, WIDTH, HEIGHT);
 		int n = system.getBodies().length;
@@ -75,12 +73,12 @@ public class Tester {
 		Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
 
 		engine.start();
-		Visualizer visualizer = new Visualizer(delta, maxTime, 5.0f, buffer, WIDTH, HEIGHT);
+		Visualizer visualizer = new Visualizer(delta, maxTime, 100.0f, buffer, WIDTH, HEIGHT);
 		engine.join();
 	}
 	
 	public static void testSolarSystem(int nThreads, int bufferSize, int maxTime, int n){
-		delta = 1.0f;
+		float delta = 1.0f;
 		
 		PSystem system = new SolarSystem(n, WIDTH, HEIGHT);
 
@@ -95,11 +93,40 @@ public class Tester {
 
 	}
 
+	// Serious bugs on emorice's setup
+	public static void threadScalabilityTest() {
+		float delta = 0.1f;
+		int width = 5;
+		int height = 5;
+		int maxTime = 1000;
+		int bufferSize  = 2000;
+
+		System.out.println("Threads  | time (s)");
+		System.out.println("=========|=============");
+		for(int nThreads = 1; nThreads < 21; nThreads++) {
+			PSystem system = new GridSystem(width, height, WIDTH, HEIGHT);
+			int n = system.getBodies().length;
+
+			Buffer buffer = new BlockingBuffer(bufferSize,n);
+			system.initBuffer(buffer);
+
+			Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
+
+			long t0 = System.nanoTime();
+			engine.start();
+			engine.join();
+			long t = System.nanoTime() - t0;
+			System.out.println(String.format("%3d      | %3.3f", nThreads, (float)t / 1000000000));
+		}
+	}
+			
+
 	public static void main(String[] args){
 		//test2b(1,1000,500);
 		//testGrid(2,10000,10,2,1);
-		//testGrid(2,1000,1000,15,15);
-		testSolarSystem(2,1000,500,30);
+		//testGrid(4, 1000, 1000 ,5,5);
+		//testSolarSystem(2,1000,500,30);
+		threadScalabilityTest();
 	}
 
 
