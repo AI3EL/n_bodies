@@ -12,9 +12,10 @@ import etc.Buffer;
 import etc.BlockingBuffer;
 import etc.Engine;
 
-import lockfree.Clock;
 import lockfree.LockfreeEngine;
 import lockfree.Visualizer;
+
+import prescheduled.PrescheduledEngine;
 
 import systems.PSystem;
 import systems.TwoBodiesSystem;
@@ -111,6 +112,7 @@ public class Tester {
 			system.initBuffer(buffer);
 
 			Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
+			//Engine engine  = new PrescheduledEngine(system, buffer, nThreads, delta, maxTime);
 
 			long t0 = System.nanoTime();
 			engine.start();
