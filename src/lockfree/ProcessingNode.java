@@ -70,12 +70,12 @@ public class ProcessingNode implements Runnable {
 							Body updatedBody = new Body(currentTime, curBody, buffer.bodies[currentTime % buffer.size][curBody].mass, buffer.bodies[currentTime % buffer.size][curBody].radius, buffer.bodies[currentTime % buffer.size][curBody].pos, buffer.bodies[currentTime % buffer.size][curBody].speed, buffer.bodies[currentTime % buffer.size][curBody].acc, buffer.nBody[currentTime % buffer.size]);
 							if(buffer.bodies[currentTime % buffer.size][curBody].time % fillTime == 0)	updatedBody.setAll(buffer.bodies[currentTime % buffer.size], force, delta, isNegligible, false);
 							else	updatedBody.setAll(buffer.bodies[currentTime % buffer.size], force, delta, isNegligible, true);
-							buffer.bodies[currentTime + 1 % buffer.size][curBody] = updatedBody;
+							buffer.bodies[(currentTime + 1 )% buffer.size][curBody] = updatedBody;
 						}
 					}finally {
 						//System.out.println("Unlock by thread :" + Thread.currentThread().getId() + " i : " + curBody + "bodyTime = " + buffer.bodies[currentTime%buffer.size][curBody].time);
 						buffer.updated[currentTime % buffer.size][curBody] = true;
-						buffer.updated[currentTime + 1 % buffer.size][curBody] = false;
+						buffer.updated[(currentTime + 1 )% buffer.size][curBody] = false;
 						buffer.bodies[currentTime % buffer.size][curBody].lock.unlock();
 					}
 				}
@@ -107,14 +107,13 @@ public class ProcessingNode implements Runnable {
 				}
 			} finally{ counter.lock.unlock();}
 			
-			first = first * buffer.nBody[currentTime - 1 % buffer.size] / buffer.nBody[currentTime - 1 % buffer.size];
+			first = first * buffer.nBody[(currentTime - 1 )% buffer.size] / buffer.nBody[(currentTime - 1 )% buffer.size];
 		}
 	}
 	
 	//updates collisioncCasses, NOT Thread Safe
 	public void detectCollisions(int curTime){
-		//System.out.println("BEGIN of detectedCollisions Thread : " + Thread.currentThread().getId());
-		int oldNBody = buffer.nBody[curTime-1%buffer.size];
+		int oldNBody = buffer.nBody[(curTime-1)%buffer.size];
 		Body[] bodies = buffer.bodies[curTime%buffer.size];
 		boolean[] classAssigned = new boolean[oldNBody]; // Initializes at false
 		int[] collisionClasses = new int[oldNBody];
@@ -122,9 +121,8 @@ public class ProcessingNode implements Runnable {
 		// At the end of this block, collisionClasses[i] contains the "root" of the collisionClass of i
 		for(int i=0; i<oldNBody; i++)		collisionClasses[i]=i;
 		for(int i=0; i<oldNBody; i++){
-			if(classAssigned[i])	continue;
 			for(int j=0; j<oldNBody;j++){
-				if((!classAssigned[j])&& (bodies[i].pos.distance(bodies[j].pos) <= bodies[i].radius + bodies[j].radius) ){
+				if((i!=j) && (!classAssigned[j])&& (bodies[i].pos.distance(bodies[j].pos) <= bodies[i].radius + bodies[j].radius) ){
 					collisionClasses[j] = collisionClasses[i];
 					if(collisionClasses[i] == -1) collisionClasses[i]=i;
 				}
@@ -150,6 +148,7 @@ public class ProcessingNode implements Runnable {
 		
 		//Creates and fill newBodies
 		Body[] newBodies = new Body[newNBody];
+		if(newNBody != oldNBody)System.out.println("Old :" + oldNBody + "New : " + newNBody + "Time :" + curTime);
 		for(int i=0; i<newNBody;i++){
 			
 			float totalMass=0;
@@ -161,8 +160,14 @@ public class ProcessingNode implements Runnable {
 			for(int j=0; j<oldNBody;j++){
 				if(collisionClasses[j] == roots[i])	nInClass++;
 			}
+			if(nInClass > 1){
+				System.out.println("Root index " + roots[i] + " nInClass " + nInClass  );
+			}
 			for(int j=0; j<oldNBody;j++){
 				if(collisionClasses[j] == roots[i]){
+					if(nInClass > 1){
+						System.out.println("Body n " + j + " Mass : " +bodies[j].mass +  " PosX : " +bodies[j].pos.x+  " PosY : " +bodies[j].pos.y);
+					}
 					totalMass+=bodies[j].mass;
 					totalSquareRadius+= (bodies[j].radius * bodies[j].radius);
 					Vector tempVec = bodies[j].pos.sub(bodies[roots[i]].pos);
@@ -171,14 +176,16 @@ public class ProcessingNode implements Runnable {
 
 					p=p.add(bodies[j].speed.mul(bodies[j].mass));
 				}
+				
 			}
 			//the speed of newBody is derives from  p conservation
 			totalSquareRadius =  (float) Math.sqrt(totalSquareRadius);
 			newBodies[i] = new Body(bodies[0].time,i, totalMass, totalSquareRadius, averagePos, p.mul(1/(float)totalMass), new Vector(), newNBody);
-			System.out.println("Body n " + i + " Mass : " +newBodies[i].mass);
+			if(nInClass > 1){
+				System.out.println("Global : mass "+ newBodies[i].mass + " posX "+ newBodies[i].pos.x+  " PosY : " +newBodies[i].pos.y);
+			}
 		}
 		buffer.bodies[curTime%buffer.size] = newBodies;	
 		buffer.nBody[curTime%buffer.size]=newNBody;
-		//System.out.println("END of detectedCollisions Thread : " + Thread.currentThread().getId());
 	}
 }

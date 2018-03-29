@@ -104,17 +104,69 @@ public class Tester {
 			threads[i].start();
 		}
 
-		//Thread negligibleNode = new Thread(new NegligibleNode( (float)0.95, clock, maxTime, isNegligible, bodies, fillTime));
-		//negligibleNode.start();
+		Thread negligibleNode = new Thread(new NegligibleNode( (float)0.95, clock, maxTime, isNegligible, buffer, fillTime));
+		negligibleNode.start();
 
-		Visualizer visualizer = new Visualizer(delta, maxTime, 10.0f, buffer, WIDTH, HEIGHT);
+		Visualizer visualizer = new Visualizer(delta, maxTime, 20.0f, buffer, WIDTH, HEIGHT);
+
+	}
+	
+	public static void testSolarSystem(int nThreads, int bufferSize, int maxTime, int n){
+		
+		//v= sqrt(GM/r) but here G = 1
+		final int sunRadius = 50;
+		final float sunMass = 1000.0f;
+		final int planetRadius=10;
+		final float planetMass = 10.0f;
+		
+		delta = 1.0f;
+		bodies = new Body[n];
+		clock = new Clock();
+		threads = new Thread[nThreads];
+		force = new GravitationnalForce();
+		int xBegin = WIDTH/2 - ( sunRadius)/2 ;
+		int yBegin = HEIGHT/2 - (sunRadius)/2 ;
+		boolean[][] isNegligible = new boolean[n][n];
+
+		int fillTime = 50;
+
+		bodies[0] = new Body(0,0, sunMass, sunRadius, new Vector(xBegin, yBegin), new Vector(0,0), new Vector(0,0), n);
+
+		for(int i=1; i< n ; i++){
+			double r = (Math.random() * (HEIGHT/2-sunRadius-planetRadius)) + sunRadius + planetRadius;
+			double teta = (Math.random()-0.5) * 2 * Math.PI;
+			float x =(float) (xBegin + r*Math.cos(teta));
+			float y =(float) (yBegin + r*Math.sin(teta));
+			float realD = (float) Math.sqrt(sunMass/r);
+
+			float vx =(float) (-Math.sin(teta)*realD);
+			float vy =(float) (Math.cos(teta)*realD);
+
+			bodies[i] = new Body(0,i, planetMass, planetRadius, new Vector(x, y), new Vector(vx,vy), new Vector(0,0), n);
+		}
+
+		buffer = new BlockingBuffer(bufferSize,n,bodies );
+
+		SafeCounter counter = new SafeCounter(0);
+		
+		for(int i=0; i< nThreads; i++){
+			int first = (i * n) / nThreads;
+			threads[i] = new Thread(new ProcessingNode(counter, clock, first, force, delta, buffer, maxTime, isNegligible, fillTime));
+			threads[i].start();
+		}
+
+		Thread negligibleNode = new Thread(new NegligibleNode( (float)0.95, clock, maxTime, isNegligible, buffer, fillTime));
+		negligibleNode.start();
+
+		Visualizer visualizer = new Visualizer(delta, maxTime, 20.0f, buffer, WIDTH, HEIGHT);
 
 	}
 
 
 	public static void main(String[] args){
 		//test2b(1,1000,500);
-		testGrid(2,10000,500,10,10);
+		//testGrid(2,1000,500,10,10);
+		testSolarSystem(2,1000,500,30);
 	}
 
 }
