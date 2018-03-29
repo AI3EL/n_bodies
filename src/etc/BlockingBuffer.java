@@ -16,6 +16,11 @@ public class BlockingBuffer extends Buffer {
 		super(size, n, pos, radiuses);
 	}
 
+	public BlockingBuffer(int size, int n)
+	{
+		super(size, n);
+	}
+
 	@Override
 	public boolean waitWrite(int frame) {
 		boolean waited = false;

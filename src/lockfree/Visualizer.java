@@ -83,6 +83,7 @@ public class Visualizer extends JFrame {
 			}
 			
 			pan.frameNum = currentFrame % buffer.size;
+			System.out.println("Printing frame " + currentFrame);
 			pan.n = buffer.nBody[currentFrame % buffer.size];
 			for(int i=0; i<pan.n ; i++){
 				pan.pos[i] = buffer.pos[currentFrame % buffer.size][i];

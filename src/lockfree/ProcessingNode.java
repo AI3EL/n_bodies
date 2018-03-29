@@ -8,6 +8,7 @@ import etc.Force;
 import etc.Vector;
 import etc.Buffer;
 
+import systems.PSystem;
 
 /*
  * ProcessingNode update the position of the bodies.
@@ -22,33 +23,45 @@ import etc.Buffer;
 public class ProcessingNode implements Runnable {
 	
 	Body[] bodies;
-	Clock clock;
-	int first;
 	Force force;
-	float delta;
+
 	Buffer buffer;
+	float delta;
 	int maxTime;
+
+	Clock clock;
 	int fillTime; // Each fillTime timesteps, the node puts in forces[][] the resultant forces of each
 	boolean[][] isNegligible;
-	Vector[][] forces;
-	Vector[] totalForces;
 	Lock mergeLock;
 	int[] nBody; // Size one, for reference 
+
+	/* ???
+	Vector[][] forces;
+	Vector[] totalForces;
+	*/
+
+	int first;
 	
-	public ProcessingNode(int[] nBody,Body[] bodies, Clock clock, int first, Force force, float delta, Buffer buffer, int maxTime, boolean[][] isNegligible, int fillTime, Lock mergeLock){
-		this.bodies=bodies;
-		this.first=first;
-		this.force=force;
+	public ProcessingNode(PSystem system, LockfreeEngine engine, int first){
+		this.bodies = system.getBodies();
+		this.force = system.getForce();
+
+		this.buffer = engine.buffer;
+		this.delta = engine.delta;
+		this.maxTime = engine.maxTime;
+
+		this.clock = engine.clock;
+		this.isNegligible = engine.isNegligible;
+		this.fillTime = engine.fillTime;
+		this.nBody = engine.nBody; 
+		this.mergeLock = engine.mergeLock;
+
+		/* ???
 		this.forces=forces;
 		this.totalForces=totalForces;
-		this.delta=delta;
-		this.buffer=buffer;
-		this.clock=clock;
-		this.maxTime = maxTime;
-		this.isNegligible = isNegligible;
-		this.fillTime = fillTime;
-		this.nBody = nBody; 
-		this.mergeLock=mergeLock;
+		*/
+
+		this.first=first;
 	}
 	
 	@Override
@@ -72,7 +85,7 @@ public class ProcessingNode implements Runnable {
 						else{
 							//DEBUG :
 							System.out.println("LOCKING thread :" + Thread.currentThread().getId() + " i : " + curBody + "bodyTime = " + bodies[curBody].time+ "currentTime" + currentTime);
-							//System.out.println(bodies[curBody].toString());
+							System.out.println(bodies[curBody].toString());
 							if(bodies[curBody].time % fillTime == 0)	bodies[curBody].setAll(bodies, force, delta, isNegligible, false);
 							else	bodies[curBody].setAll(bodies, force, delta, isNegligible, true);
 
@@ -92,13 +105,14 @@ public class ProcessingNode implements Runnable {
 				try{
 					// Useful so that only one thread does detectCollisions
 					if(!buffer.mergeAlreadyDone[currentTime % buffer.size]){
+						buffer.nBody[(currentTime + 1) % buffer.size] = nBody[0];	
+
 						System.out.println("Entered Lock : Thread : " + Thread.currentThread().getId() +"clockTime : "+clock.time.get());
 						detectCollisions();
 						System.out.println("nBody : " + nBody[0]);
 						System.out.println("time :" + clock.time.get());
 						buffer.mergeAlreadyDone[clock.time.get() % buffer.size] = true;
 						buffer.mergeAlreadyDone[(clock.time.get() + 1) % buffer.size] = false;	//For the next time
-						buffer.nBody[clock.time.get() % buffer.size] = nBody[0];
 					}
 				} finally{ mergeLock.unlock();}
 				buffer.waitWrite(currentTime + 1);
