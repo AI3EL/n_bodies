@@ -8,6 +8,7 @@ import etc.Force;
 import etc.Vector;
 import etc.Buffer;
 
+import systems.PSystem;
 
 /*
  * ProcessingNode update the position of the bodies.
@@ -21,26 +22,31 @@ import etc.Buffer;
 
 public class ProcessingNode implements Runnable {
 	
-	Clock clock;
-	int first;
 	Force force;
-	float delta;
+
 	Buffer buffer;
+	float delta;
 	int maxTime;
+
+	Clock clock;
 	int fillTime; // Each fillTime timesteps, the node puts in forces[][] the resultant forces of each
 	boolean[][] isNegligible;
+	Lock mergeLock;
 	SafeCounter counter;
+
+	int first;
 	
-	public ProcessingNode(SafeCounter counter,Clock clock, int first, Force force, float delta, Buffer buffer, int maxTime, boolean[][] isNegligible, int fillTime){
+	public ProcessingNode(PSystem system, LockfreeEngine engine, int first){
+		this.force = system.getForce();
+		this.buffer = engine.buffer;
+		this.delta = engine.delta;
+		this.maxTime = engine.maxTime;
+		this.clock = engine.clock;
+		this.isNegligible = engine.isNegligible;
+		this.fillTime = engine.fillTime;
+		this.mergeLock = engine.mergeLock;
+		this.counter = engine.counter;
 		this.first=first;
-		this.force=force;
-		this.delta=delta;
-		this.buffer=buffer;
-		this.clock=clock;
-		this.maxTime = maxTime;
-		this.isNegligible = isNegligible;
-		this.fillTime = fillTime;
-		this.counter=counter;
 	}
 	
 	@Override
@@ -71,7 +77,7 @@ public class ProcessingNode implements Runnable {
 							if(buffer.bodies[currentTime % buffer.size][curBody].time % fillTime == 0)	updatedBody.setAll(buffer.bodies[currentTime % buffer.size], force, delta, isNegligible, false);
 							else	updatedBody.setAll(buffer.bodies[currentTime % buffer.size], force, delta, isNegligible, true);
 							buffer.bodies[(currentTime + 1 )% buffer.size][curBody] = updatedBody;
-							System.out.println(updatedBody.toString());
+							//System.out.println(updatedBody.toString() + "/Time : " + currentTime);
 
 						}
 					}finally {
@@ -150,21 +156,20 @@ public class ProcessingNode implements Runnable {
 		
 		//Creates and fill newBodies
 		Body[] newBodies = new Body[newNBody];
-		if(newNBody != oldNBody)System.out.println("Old :" + oldNBody + "New : " + newNBody + "Time :" + curTime);
 		for(int i=0; i<newNBody;i++){
 			Vector averagePos = new Vector();
-			float maxMass=bodies[roots[i]].mass;
-			float nMaxMass=0.0f;
+			float maxRadius=bodies[roots[i]].radius;
+			float nMaxRadius=0.0f;
 			for(int j=0; j<oldNBody;j++){
-				if(collisionClasses[j] == roots[i] && maxMass < bodies[j].mass)		maxMass=bodies[j].mass;
+				if(collisionClasses[j] == roots[i] && maxRadius < bodies[j].radius)		maxRadius=bodies[j].radius;
 			}
 			for(int j=0; j<oldNBody;j++){
-				if(collisionClasses[j] == roots[i] && maxMass == bodies[j].mass){
+				if(collisionClasses[j] == roots[i] && maxRadius == bodies[j].radius){
 					averagePos=averagePos.add(bodies[j].pos);
-					nMaxMass++;
+					nMaxRadius++;
 				}
 			}
-			averagePos = averagePos.mul(1/nMaxMass);
+			averagePos = averagePos.mul(1/nMaxRadius);
 
 			float totalMass=0;
 			float totalQ=0;
@@ -188,9 +193,7 @@ public class ProcessingNode implements Runnable {
 			//the speed of newBody is derives from  p conservation
 			totalSquareRadius =  (float) Math.sqrt(totalSquareRadius);
 			newBodies[i] = new Body(bodies[0].time,i, totalMass,totalQ, totalSquareRadius, averagePos, p.mul(1/(float)totalMass), new Vector(), newNBody);
-			if(nInClass > 1){
-				System.out.println("Global : mass "+ newBodies[i].mass + " posX "+ newBodies[i].pos.x+  " PosY : " +newBodies[i].pos.y);
-			}
+
 		}
 		buffer.bodies[curTime%buffer.size] = newBodies;	
 		buffer.nBody[curTime%buffer.size]=newNBody;

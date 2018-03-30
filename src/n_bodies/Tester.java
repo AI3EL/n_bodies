@@ -4,12 +4,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import lockfree.Clock;
-import lockfree.NegligibleNode;
-import lockfree.ProcessingNode;
-import lockfree.SafeCounter;
-import lockfree.Visualizer;
-
 import etc.Body;
 import etc.ElectricForce;
 import etc.Force;
@@ -17,6 +11,18 @@ import etc.GravitationnalForce;
 import etc.Vector;
 import etc.Buffer;
 import etc.BlockingBuffer;
+import etc.Engine;
+
+import lockfree.LockfreeEngine;
+import lockfree.Visualizer;
+
+import prescheduled.PrescheduledEngine;
+
+import systems.ElectricGridSystem;
+import systems.PSystem;
+import systems.TwoBodiesSystem;
+import systems.GridSystem;
+import systems.SolarSystem;
 
 public class Tester {
 
@@ -36,173 +42,113 @@ public class Tester {
 	static int WIDTH = 1200;
 	static int HEIGHT = 800;
 
-	static int n;
-	static float delta;
-	static Clock clock;
-	static Body[] bodies;
-	static Thread[] threads;
-	static Force force;
-	static Buffer buffer;
-
 	/*
 	 * Test with 2 bodies, of mass 1
 	 */
 	public static void test2b(int nThreads, int bufferSize, int maxTime){
-		n = 2;
-		delta = 1.0f;
-		bodies = new Body[n];
-		clock = new Clock();
-		threads = new Thread[nThreads];
-		force = new GravitationnalForce();
-		boolean[][] isNegligible = new boolean[n][n];
+		float delta = 0.1f;
 
-		int fillTime = 100;
-		
+		PSystem system = new TwoBodiesSystem();
+		int n = system.getBodies().length;
 
-		bodies[0] = new Body(0,0, 100, 0, 10, new Vector(10,10), new Vector(0,0), new Vector(0,0), n);
-		bodies[1] = new Body(0,1, 100, 0, 10, new Vector(30,30), new Vector(0,0), new Vector(0,0), n);
+		Buffer buffer = new BlockingBuffer(bufferSize,n);
+		system.initBuffer(buffer);
 
-		buffer = new BlockingBuffer(bufferSize,n, bodies );
-		SafeCounter counter = new SafeCounter(0);
+		Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
 
-		for(int i=0; i< nThreads; i++){
-			threads[i] = new Thread(new ProcessingNode(counter, clock, i, force,delta, buffer, maxTime, isNegligible, fillTime));
-			threads[i].start();
-		}
-
-		//Visualizer visualizer = new Visualizer(delta, maxTime, 1.0f, buffer, WIDTH, HEIGHT);
+		engine.start();
+		Visualizer visualizer = new Visualizer(delta, maxTime, 10.0f, buffer, WIDTH, HEIGHT);
+		engine.join();
 	}
 
 	/*
 	 * Test with width*height bodies on a centered grid, each has mass 1
 	 */
 	public static void testGrid(int nThreads, int bufferSize, int maxTime, int width, int height){
-		n = width * height;
-		delta = 1.0f;
-		bodies = new Body[n];
-		clock = new Clock();
-		threads = new Thread[nThreads];
-		force = new GravitationnalForce();
-		int xBegin = WIDTH/2 - (width * 30)/2 ;
-		int yBegin = HEIGHT/2 - (height * 30)/2 ;
-		boolean[][] isNegligible = new boolean[n][n];
 
-		int fillTime = 50;
+		float delta = 0.1f;
+		PSystem system = new GridSystem(width, height, WIDTH, HEIGHT);
+		int n = system.getBodies().length;
 
-		for(int i=0; i< width ; i++){
-			for(int j=0; j<height;j++){
-				bodies[j + i*height] = new Body(0,j+i*height, 1, 0, 10, new Vector(xBegin + (i+1)*30, yBegin + (j+1)*30), new Vector(0,0), new Vector(0,0), n);
-			}
-		}
+		Buffer buffer = new BlockingBuffer(bufferSize,n);
+		system.initBuffer(buffer);
 
-		buffer = new BlockingBuffer(bufferSize,n,bodies );
-
-		SafeCounter counter = new SafeCounter(0);
-		
-		for(int i=0; i< nThreads; i++){
-			int first = (i * n) / nThreads;
-			threads[i] = new Thread(new ProcessingNode(counter, clock, first, force, delta, buffer, maxTime, isNegligible, fillTime));
-			threads[i].start();
-		}
-
-		Thread negligibleNode = new Thread(new NegligibleNode( (float)0.95, clock, maxTime, isNegligible, buffer, fillTime));
-		negligibleNode.start();
-
+		Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
+		engine.start();
 		Visualizer visualizer = new Visualizer(delta, maxTime, 10.0f, buffer, WIDTH, HEIGHT);
+		engine.join();
+	}
+	
+	public static void testGridElectric(int nThreads, int bufferSize, int maxTime, int width, int height){
+		float delta = 0.1f;
+		PSystem system = new ElectricGridSystem(width, height, WIDTH, HEIGHT);
+		int n = system.getBodies().length;
+
+		Buffer buffer = new BlockingBuffer(bufferSize,n);
+		system.initBuffer(buffer);
+
+		Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
+		engine.start();
+		Visualizer visualizer = new Visualizer(delta, maxTime, 10.0f, buffer, WIDTH, HEIGHT);
+		engine.join();
 
 	}
 	
 	public static void testSolarSystem(int nThreads, int bufferSize, int maxTime, int n){
+		float delta = 1.0f;
 		
-		//v= sqrt(GM/r) but here G = 1
-		final int sunRadius = 50;
-		final float sunMass = 1000.0f;
-		final int planetRadius=5;
-		final float planetMass = 5.0f;
-		
-		delta = 1.0f;
-		bodies = new Body[n];
-		clock = new Clock();
-		threads = new Thread[nThreads];
-		force = new GravitationnalForce();
-		int xBegin = WIDTH/2 - ( sunRadius)/2 ;
-		int yBegin = HEIGHT/2 - (sunRadius)/2 ;
-		boolean[][] isNegligible = new boolean[n][n];
+		PSystem system = new SolarSystem(n, WIDTH, HEIGHT);
 
-		int fillTime = 50;
+		Buffer buffer = new BlockingBuffer(bufferSize,n);
+		system.initBuffer(buffer);
 
-		bodies[0] = new Body(0,0, sunMass, 0, sunRadius, new Vector(xBegin, yBegin), new Vector(0,0), new Vector(0,0), n);
+		Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
 
-		for(int i=1; i< n ; i++){
-			double r = (Math.random() * (HEIGHT/2-sunRadius-planetRadius)) + sunRadius + planetRadius;
-			double teta = (Math.random()-0.5) * 2 * Math.PI;
-			float x =(float) (xBegin + r*Math.cos(teta));
-			float y =(float) (yBegin + r*Math.sin(teta));
-			float realD = (float) Math.sqrt(sunMass/r);
-
-			float vx =(float) (-Math.sin(teta)*realD);
-			float vy =(float) (Math.cos(teta)*realD);
-
-			bodies[i] = new Body(0,i, planetMass, 0, planetRadius, new Vector(x, y), new Vector(vx,vy), new Vector(0,0), n);
-		}
-
-		buffer = new BlockingBuffer(bufferSize,n,bodies );
-
-		SafeCounter counter = new SafeCounter(0);
-		
-		for(int i=0; i< nThreads; i++){
-			int first = (i * n) / nThreads;
-			threads[i] = new Thread(new ProcessingNode(counter, clock, first, force, delta, buffer, maxTime, isNegligible, fillTime));
-			threads[i].start();
-		}
-
-		Thread negligibleNode = new Thread(new NegligibleNode( (float)0.95, clock, maxTime, isNegligible, buffer, fillTime));
-		negligibleNode.start();
-
-		Visualizer visualizer = new Visualizer(delta, maxTime, 100.0f, buffer, WIDTH, HEIGHT);
+		engine.start();
+		Visualizer visualizer = new Visualizer(delta, maxTime, 20.0f, buffer, WIDTH, HEIGHT);
+		engine.join();
 
 	}
 	
-	public static void testGridElectric(int nThreads, int bufferSize, int maxTime, int width, int height){
-		n = width * height;
-		delta = 1.0f;
-		bodies = new Body[n];
-		clock = new Clock();
-		threads = new Thread[nThreads];
-		force = new ElectricForce();
-		int xBegin = WIDTH/2 - (width * 30)/2 ;
-		int yBegin = HEIGHT/2 - (height * 30)/2 ;
-		boolean[][] isNegligible = new boolean[n][n];
+	
+	
+	// Serious bugs on emorice's setup
+	// On AI3EL's too :(
+	public static void threadScalabilityTest() {
+		float delta = 0.1f;
+		int width = 5;
+		int height = 5;
+		int maxTime = 1000;
+		int bufferSize  = 2000;
 
-		int fillTime = 50;
-		
-		for(int i=0; i< width ; i++){
-			for(int j=0; j<height;j++){
-				bodies[j + i*height] = new Body(0,j+i*height, 1, (int) ((((j+i*height) % 2)-0.5)*20), 10, new Vector(xBegin + (i+1)*30, yBegin + (j+1)*30), new Vector(0,0), new Vector(0,0), n);
-			}
+		System.out.println("Threads  | time (s)");
+		System.out.println("=========|=============");
+		for(int nThreads = 1; nThreads < 21; nThreads++) {
+			PSystem system = new GridSystem(width, height, WIDTH, HEIGHT);
+			int n = system.getBodies().length;
+
+			Buffer buffer = new BlockingBuffer(bufferSize,n);
+			system.initBuffer(buffer);
+
+			Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
+			//Engine engine  = new PrescheduledEngine(system, buffer, nThreads, delta, maxTime);
+
+			long t0 = System.nanoTime();
+			engine.start();
+			engine.join();
+			long t = System.nanoTime() - t0;
+			System.out.println(String.format("%3d      | %3.3f", nThreads, (float)t / 1000000000));
 		}
-
-		buffer = new BlockingBuffer(bufferSize,n,bodies );
-
-		SafeCounter counter = new SafeCounter(0);
-		
-		for(int i=0; i< nThreads; i++){
-			int first = (i * n) / nThreads;
-			threads[i] = new Thread(new ProcessingNode(counter, clock, first, force, delta, buffer, maxTime, isNegligible, fillTime));
-			threads[i].start();
-		}
-
-		Thread negligibleNode = new Thread(new NegligibleNode( (float)0.95, clock, maxTime, isNegligible, buffer, fillTime));
-		negligibleNode.start();
-
-		Visualizer visualizer = new Visualizer(delta, maxTime, 20.0f, buffer, WIDTH, HEIGHT);
-
 	}
 	
 	public static void main(String[] args){
-		//testGrid(1,1000,500,10,10);
-		//testGridElectric(1,1000,500,10,5);
-		//testSolarSystem(2,100000,10000,100);
+
+		//test2b(1,1000,500);
+		//testGrid(10,2000,1000,5,5);
+		testGridElectric(4, 1000, 1000 ,5,5);
+		//testSolarSystem(2,1000,500,30);
+		//threadScalabilityTest();
 	}
+
 
 }
