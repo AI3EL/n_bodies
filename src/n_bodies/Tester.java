@@ -54,9 +54,12 @@ public class Tester {
 		Buffer buffer = new BlockingBuffer(bufferSize,n);
 		system.initBuffer(buffer);
 
-		Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
+		// Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
+		Engine engine  = new PrescheduledEngine(system, buffer, nThreads, delta, maxTime);
+
 		engine.start();
 		Visualizer visualizer = new Visualizer(delta, maxTime, speedUp, buffer, WIDTH, HEIGHT);
+
 		engine.join();
 	}
 	
@@ -81,7 +84,8 @@ public class Tester {
 		Buffer buffer = new BlockingBuffer(bufferSize,n);
 		system.initBuffer(buffer);
 
-		Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
+		//Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
+		Engine engine  = new PrescheduledEngine(system, buffer, nThreads, delta, maxTime);
 
 		engine.start();
 		Visualizer visualizer = new Visualizer(delta, maxTime, speedUp, buffer, WIDTH, HEIGHT);
@@ -94,7 +98,7 @@ public class Tester {
 	// Serious bugs on emorice's setup
 	// On AI3EL's too :(
 	public static void threadScalabilityTest() {
-		float delta = 0.1f;
+		float delta = 0.2f;
 		int width = 5;
 		int height = 5;
 		int maxTime = 1000;
@@ -109,8 +113,8 @@ public class Tester {
 			Buffer buffer = new BlockingBuffer(bufferSize,n);
 			system.initBuffer(buffer);
 
-			//Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
-			 Engine engine  = new PrescheduledEngine(system, buffer, nThreads, delta, maxTime);
+			Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
+			 //Engine engine  = new PrescheduledEngine(system, buffer, nThreads, delta, maxTime);
 
 			long t0 = System.nanoTime();
 			engine.start();
@@ -126,6 +130,7 @@ public class Tester {
 		//testGridElectric(4, 10000, 10000 ,6,6, 1.0f, 20.0f);
 		testSolarSystem(2,100,1000,50,1.0f,30.0f);
 		//threadScalabilityTest();
+
 	}
 
 
