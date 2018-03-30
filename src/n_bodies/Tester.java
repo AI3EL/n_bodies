@@ -75,7 +75,7 @@ public class Tester {
 
 		Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
 		engine.start();
-		Visualizer visualizer = new Visualizer(delta, maxTime, 10.0f, buffer, WIDTH, HEIGHT);
+		//Visualizer visualizer = new Visualizer(delta, maxTime, 10.0f, buffer, WIDTH, HEIGHT);
 		engine.join();
 	}
 	
@@ -123,15 +123,15 @@ public class Tester {
 
 		System.out.println("Threads  | time (s)");
 		System.out.println("=========|=============");
-		for(int nThreads = 1; nThreads < 5; nThreads++) {
+		for(int nThreads = 1; nThreads < 21; nThreads++) {
 			PSystem system = new GridSystem(width, height, WIDTH, HEIGHT);
 			int n = system.getBodies().length;
 
 			Buffer buffer = new BlockingBuffer(bufferSize,n);
 			system.initBuffer(buffer);
 
-			Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
-			// Engine engine  = new PrescheduledEngine(system, buffer, nThreads, delta, maxTime);
+			//Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
+			 Engine engine  = new PrescheduledEngine(system, buffer, nThreads, delta, maxTime);
 
 			long t0 = System.nanoTime();
 			engine.start();
@@ -144,10 +144,10 @@ public class Tester {
 	public static void main(String[] args){
 
 		//test2b(1,1000,500);
-		testGrid(15,2000,50,10,10);
+		//testGrid(15,2000,15,5,5);
 		//testGridElectric(4, 1000, 1000 ,5,5);
-		//testSolarSystem(2,5000,1000,30);
-		//threadScalabilityTest();
+		//testSolarSystem(2,5000,1000,100);
+		threadScalabilityTest();
 	}
 
 
