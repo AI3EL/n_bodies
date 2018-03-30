@@ -123,7 +123,7 @@ public class Tester {
 
 		System.out.println("Threads  | time (s)");
 		System.out.println("=========|=============");
-		for(int nThreads = 1; nThreads < 21; nThreads++) {
+		for(int nThreads = 1; nThreads < 5; nThreads++) {
 			PSystem system = new GridSystem(width, height, WIDTH, HEIGHT);
 			int n = system.getBodies().length;
 
@@ -131,7 +131,7 @@ public class Tester {
 			system.initBuffer(buffer);
 
 			Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
-			//Engine engine  = new PrescheduledEngine(system, buffer, nThreads, delta, maxTime);
+			// Engine engine  = new PrescheduledEngine(system, buffer, nThreads, delta, maxTime);
 
 			long t0 = System.nanoTime();
 			engine.start();
@@ -145,9 +145,9 @@ public class Tester {
 
 		//test2b(1,1000,500);
 		//testGrid(10,2000,1000,5,5);
-		testGridElectric(4, 1000, 1000 ,5,5);
-		//testSolarSystem(2,1000,500,30);
-		//threadScalabilityTest();
+		//testGridElectric(4, 1000, 1000 ,5,5);
+		//testSolarSystem(2,5000,1000,30);
+		threadScalabilityTest();
 	}
 
 

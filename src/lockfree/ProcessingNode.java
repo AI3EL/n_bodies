@@ -90,28 +90,28 @@ public class ProcessingNode implements Runnable {
 				counter.decrement();
 			}	//for
 			
-			counter.lock.lock();
-			if(counter.get()!=0)	counter.isNull.awaitUninterruptibly();
-			
-			buffer.waitWrite(currentTime); //Many threads will pass by here
-			// Was down detectCollisino and with currentTIme + 1
 			if(clock.time.compareAndSet(currentTime,currentTime+1)){
 				//System.out.println("Time has changed : Thread : " + Thread.currentThread().getId() +"clockTime : "+clock.time.get());
 			}
 			currentTime = clock.time.get();
-			//DetectCollisions will behave on the new Posittions that have been just calculated
+			
+			counter.lock.lock();
+			if(counter.get()!=0)	counter.isNull.awaitUninterruptibly();
+			
+			//DetectCollisions will behave on the new Positions that have been just calculated
 			//DetectCollisions must be done when all positions have been set for this time -> counter
 			// When a Thread arrives here it means that for each body : either he was set, either someone entered the lock
-			
 			try{
 				// Useful so that only one thread does detectCollisions
 				if(!buffer.mergeAlreadyDone[currentTime % buffer.size]){
+					buffer.waitWrite(currentTime); //Many threads will pass by here
+
 					//System.out.println("Entered Lock d Thread : " + Thread.currentThread().getId() +"clockTime : "+clock.time.get());
 					detectCollisions(currentTime);
 					//System.out.println("nBody : " + buffer.nBody[currentTime % buffer.size]);
 					//System.out.println("Clocktime :" + clock.time.get());
-					buffer.mergeAlreadyDone[clock.time.get() % buffer.size] = true;
-					buffer.mergeAlreadyDone[(clock.time.get() + 1) % buffer.size] = false;	//For the next time
+					buffer.mergeAlreadyDone[(currentTime) % buffer.size] = true;
+					buffer.mergeAlreadyDone[(currentTime + 1) % buffer.size] = false;	//For the next time
 				}
 			} finally{ counter.lock.unlock();}
 			
@@ -121,8 +121,8 @@ public class ProcessingNode implements Runnable {
 	
 	//updates collisioncCasses, NOT Thread Safe
 	public void detectCollisions(int curTime){
-		int oldNBody = buffer.nBody[(curTime-1)%buffer.size];
-		Body[] bodies = buffer.bodies[curTime%buffer.size];
+		int oldNBody = buffer.nBody[(curTime-1) % buffer.size];
+		Body[] bodies = buffer.bodies[curTime % buffer.size];
 		boolean[] classAssigned = new boolean[oldNBody]; // Initializes at false
 		int[] collisionClasses = new int[oldNBody];
 		
@@ -130,9 +130,16 @@ public class ProcessingNode implements Runnable {
 		for(int i=0; i<oldNBody; i++)		collisionClasses[i]=i;
 		for(int i=0; i<oldNBody; i++){
 			for(int j=0; j<oldNBody;j++){
-				if((i!=j) && (!classAssigned[j])&& (bodies[i].pos.distance(bodies[j].pos) <= bodies[i].radius + bodies[j].radius) ){
-					collisionClasses[j] = collisionClasses[i];
-					if(collisionClasses[i] == -1) collisionClasses[i]=i;
+				try{
+					if((i!=j) && (!classAssigned[j])&& (bodies[i].pos.distance(bodies[j].pos) <= bodies[i].radius + bodies[j].radius) ){
+						collisionClasses[j] = collisionClasses[i];
+						if(collisionClasses[i] == -1) collisionClasses[i]=i;
+					}
+				}
+				catch(NullPointerException e){
+					System.out.println("ERROR : NullPointerException : "+ e);
+					System.out.println("classAssigned length : "+ classAssigned.length);
+					System.out.println("OldNBody : " + oldNBody + "Bodies.length : "+ bodies.length + " i :" + i + " j : "+ j );
 				}
 			}
 		}
