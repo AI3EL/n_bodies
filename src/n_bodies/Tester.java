@@ -42,31 +42,12 @@ public class Tester {
 	static int WIDTH = 1200;
 	static int HEIGHT = 800;
 
-	/*
-	 * Test with 2 bodies, of mass 1
-	 */
-	public static void test2b(int nThreads, int bufferSize, int maxTime){
-		float delta = 0.1f;
-
-		PSystem system = new TwoBodiesSystem();
-		int n = system.getBodies().length;
-
-		Buffer buffer = new BlockingBuffer(bufferSize,n);
-		system.initBuffer(buffer);
-
-		Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
-
-		engine.start();
-		Visualizer visualizer = new Visualizer(delta, maxTime, 10.0f, buffer, WIDTH, HEIGHT);
-		engine.join();
-	}
 
 	/*
 	 * Test with width*height bodies on a centered grid, each has mass 1
 	 */
-	public static void testGrid(int nThreads, int bufferSize, int maxTime, int width, int height){
+	public static void testGrid(int nThreads, int bufferSize, int maxTime, int width, int height, float delta,float speedUp){
 
-		float delta = 0.1f;
 		PSystem system = new GridSystem(width, height, WIDTH, HEIGHT);
 		int n = system.getBodies().length;
 
@@ -75,12 +56,11 @@ public class Tester {
 
 		Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
 		engine.start();
-		//Visualizer visualizer = new Visualizer(delta, maxTime, 10.0f, buffer, WIDTH, HEIGHT);
+		Visualizer visualizer = new Visualizer(delta, maxTime, speedUp, buffer, WIDTH, HEIGHT);
 		engine.join();
 	}
 	
-	public static void testGridElectric(int nThreads, int bufferSize, int maxTime, int width, int height){
-		float delta = 0.1f;
+	public static void testGridElectric(int nThreads, int bufferSize, int maxTime, int width, int height, float delta,float speedUp){
 		PSystem system = new ElectricGridSystem(width, height, WIDTH, HEIGHT);
 		int n = system.getBodies().length;
 
@@ -89,13 +69,12 @@ public class Tester {
 
 		Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
 		engine.start();
-		Visualizer visualizer = new Visualizer(delta, maxTime, 10.0f, buffer, WIDTH, HEIGHT);
+		Visualizer visualizer = new Visualizer(delta, maxTime, speedUp, buffer, WIDTH, HEIGHT);
 		engine.join();
 
 	}
 	
-	public static void testSolarSystem(int nThreads, int bufferSize, int maxTime, int n){
-		float delta = 1.0f;
+	public static void testSolarSystem(int nThreads, int bufferSize, int maxTime, int n, float delta,float speedUp){
 		
 		PSystem system = new SolarSystem(n, WIDTH, HEIGHT);
 
@@ -105,7 +84,7 @@ public class Tester {
 		Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
 
 		engine.start();
-		Visualizer visualizer = new Visualizer(delta, maxTime, 20.0f, buffer, WIDTH, HEIGHT);
+		Visualizer visualizer = new Visualizer(delta, maxTime, speedUp, buffer, WIDTH, HEIGHT);
 		engine.join();
 
 	}
@@ -143,11 +122,10 @@ public class Tester {
 	
 	public static void main(String[] args){
 
-		//test2b(1,1000,500);
-		//testGrid(15,2000,15,5,5);
-		//testGridElectric(4, 1000, 1000 ,5,5);
-		//testSolarSystem(2,5000,1000,100);
-		threadScalabilityTest();
+		//testGrid(10,10000,9000,10,10, 0.1f, 50.0f);
+		//testGridElectric(4, 10000, 10000 ,6,6, 1.0f, 20.0f);
+		testSolarSystem(2,100,1000,50,1.0f,30.0f);
+		//threadScalabilityTest();
 	}
 
 

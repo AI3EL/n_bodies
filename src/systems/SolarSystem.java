@@ -6,10 +6,10 @@ import etc.Body;
 import etc.GravitationnalForce;
 
 public class SolarSystem extends PSystem {
-	final int sunRadius = 50;
+	final int sunRadius = 20;
 	final float sunMass = 1000.0f;
-	final int planetRadius=10;
-	final float planetMass = 10.0f;
+	final int planetRadius=5;
+	final float planetMass = 1.0f;
 
 	public SolarSystem(int n, int displayWidth, int displayHeight) {
 		this.n = n;

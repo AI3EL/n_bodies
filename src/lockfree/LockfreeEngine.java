@@ -16,7 +16,6 @@ public class LockfreeEngine extends Engine {
 	int [] nBody;
 	boolean [][] isNegligible;
 	int fillTime;
-	Lock mergeLock;
 	SafeCounter counter;
 
 	public LockfreeEngine(PSystem system, Buffer buffer, int nThreads, float delta, int maxTime) {
@@ -29,7 +28,6 @@ public class LockfreeEngine extends Engine {
 		this.clock = new Clock();
 		this.isNegligible = new boolean[n][n];
 		this.fillTime = 50;
-		this.mergeLock = new ReentrantLock();
 		this.counter = new SafeCounter(0);
 
 		this.threads = new Thread[nThreads];
