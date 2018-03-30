@@ -144,10 +144,10 @@ public class Tester {
 	public static void main(String[] args){
 
 		//test2b(1,1000,500);
-		//testGrid(10,2000,1000,5,5);
+		testGrid(15,2000,50,10,10);
 		//testGridElectric(4, 1000, 1000 ,5,5);
 		//testSolarSystem(2,5000,1000,30);
-		threadScalabilityTest();
+		//threadScalabilityTest();
 	}
 
 

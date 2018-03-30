@@ -4,6 +4,8 @@ import etc.Vector;
 
 import java.util.Arrays;
 
+import lockfree.SafeCounter;
+
 /*
  * In this implementation it is not important is some data is lost, as the primary goal is speed
  * In this implementation, the buffer is just an array of array
@@ -21,6 +23,7 @@ public class Buffer {
 	public int size;
 	public boolean[] mergeAlreadyDone;
 	public boolean[] updated[];
+	public SafeCounter[] counter;
 	
 	public Buffer(int size, int n){
 		this.bodies = new Body[size][n];
@@ -29,6 +32,8 @@ public class Buffer {
 		this.size=size;
 		this.mergeAlreadyDone = new boolean[size];
 		this.updated = new boolean[size][n];
+		this.counter = new SafeCounter[size];
+		for(int i=0; i<size;i++)	this.counter[i] = new SafeCounter(0);
 	}
 
 	public Buffer(int size, int n, Body[] bodies){

@@ -28,6 +28,8 @@ public class SafeCounter {
 	public void increment(){
 		lock.lock();
 		try{
+			//System.out.println("bef inc :" + n );
+
 			n++;
 		} finally{
 			lock.unlock();
