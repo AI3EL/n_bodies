@@ -73,9 +73,11 @@ public class Tester {
 		Buffer buffer = new BlockingBuffer(bufferSize,n);
 		system.initBuffer(buffer);
 
-		Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
+		// Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
+		Engine engine  = new PrescheduledEngine(system, buffer, nThreads, delta, maxTime);
+
 		engine.start();
-		//Visualizer visualizer = new Visualizer(delta, maxTime, 10.0f, buffer, WIDTH, HEIGHT);
+		Visualizer visualizer = new Visualizer(delta, maxTime, 10.0f, buffer, WIDTH, HEIGHT);
 		engine.join();
 	}
 	
@@ -102,7 +104,8 @@ public class Tester {
 		Buffer buffer = new BlockingBuffer(bufferSize,n);
 		system.initBuffer(buffer);
 
-		Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
+		//Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
+		Engine engine  = new PrescheduledEngine(system, buffer, nThreads, delta, maxTime);
 
 		engine.start();
 		Visualizer visualizer = new Visualizer(delta, maxTime, 20.0f, buffer, WIDTH, HEIGHT);
@@ -115,7 +118,7 @@ public class Tester {
 	// Serious bugs on emorice's setup
 	// On AI3EL's too :(
 	public static void threadScalabilityTest() {
-		float delta = 0.1f;
+		float delta = 0.2f;
 		int width = 5;
 		int height = 5;
 		int maxTime = 1000;
@@ -130,8 +133,8 @@ public class Tester {
 			Buffer buffer = new BlockingBuffer(bufferSize,n);
 			system.initBuffer(buffer);
 
-			//Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
-			 Engine engine  = new PrescheduledEngine(system, buffer, nThreads, delta, maxTime);
+			Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
+			 //Engine engine  = new PrescheduledEngine(system, buffer, nThreads, delta, maxTime);
 
 			long t0 = System.nanoTime();
 			engine.start();
@@ -144,9 +147,9 @@ public class Tester {
 	public static void main(String[] args){
 
 		//test2b(1,1000,500);
-		//testGrid(15,2000,15,5,5);
+		//testGrid(2,2,100000,10,10);
 		//testGridElectric(4, 1000, 1000 ,5,5);
-		//testSolarSystem(2,5000,1000,100);
+		//testSolarSystem(2,5000,1000,30);
 		threadScalabilityTest();
 	}
 
