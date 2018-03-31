@@ -28,9 +28,9 @@ public class Tester {
 
 	/*
 	 * We assume that generally, n >> nThreads
-	 * clock.time ==n -> proccessingNode should process bodies that have time n to time n+1
-	 * nBuffers is the number of timesteps a processing thread can go over var time
-	 * Hence there are nBuffers buffers
+	 * You can comment/uncomment Engine in tests to change the Engined used
+	 * You can also comment/uncomment NegligibleNode to see the difference
+	 * 
 	 *
 	 * Tests Results :
 	 * 22s for testGrid(2,100,1000,30,30) with no NegligibleNode
@@ -44,7 +44,7 @@ public class Tester {
 
 
 	/*
-	 * Test with width*height bodies on a centered grid, each has mass 1
+	 * Test with width*height bodies on a centered grid, each has mass 1 
 	 */
 	public static void testGrid(int nThreads, int bufferSize, int maxTime, int width, int height, float delta,float speedUp){
 
@@ -63,6 +63,9 @@ public class Tester {
 		engine.join();
 	}
 	
+	/*
+	 * Test with width*height bodies on a centered grid, each has q in (-20,20)
+	 */
 	public static void testGridElectric(int nThreads, int bufferSize, int maxTime, int width, int height, float delta,float speedUp){
 		PSystem system = new ElectricGridSystem(width, height, WIDTH, HEIGHT);
 		int n = system.getBodies().length;
@@ -84,8 +87,8 @@ public class Tester {
 		Buffer buffer = new BlockingBuffer(bufferSize,n);
 		system.initBuffer(buffer);
 
-		//Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
-		Engine engine  = new PrescheduledEngine(system, buffer, nThreads, delta, maxTime);
+		Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
+		// Engine engine  = new PrescheduledEngine(system, buffer, nThreads, delta, maxTime);
 
 		engine.start();
 		Visualizer visualizer = new Visualizer(delta, maxTime, speedUp, buffer, WIDTH, HEIGHT);
@@ -95,8 +98,6 @@ public class Tester {
 	
 	
 	
-	// Serious bugs on emorice's setup
-	// On AI3EL's too :(
 	public static void threadScalabilityTest() {
 		float delta = 0.2f;
 		int width = 5;

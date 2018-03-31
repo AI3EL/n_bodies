@@ -46,8 +46,8 @@ public class NegligibleNode implements Runnable {
 			}
 			else {
 				lastTime=clock.time.get();
-				final Body[] bodies = buffer.bodies[lastTime%buffer.size];
-				int n = buffer.nBody[lastTime % buffer.size];
+				final Body[] bodies = buffer.bodies[(lastTime-(lastTime%fillTime))%buffer.size];
+				int n = buffer.nBody[(lastTime-(lastTime%fillTime)) % buffer.size];
 				int bi = (int) (Math.random() * n);
 				int bj = (int) (Math.random() * n);
 				for(int i=0; i<n;i++){

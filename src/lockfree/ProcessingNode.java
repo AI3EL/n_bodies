@@ -14,11 +14,9 @@ import systems.PSystem;
  * ProcessingNode update the position of the bodies.
  * For this it uses a AtomicInteger counter that holds the value of the minimum time the bodies
  * The Thread tries to get the lock of a body(bodies[first] is the first it tries, generally, the firsts are equally distributed), if not possible he tries another one
- * Once body is locked, he checks that the time of the body is not exceeding the minimum time ( this will be optimized)
- * NOTE: when incrementing clock.time, every other Thread is trying to do the same or in pause
- * So we can use a Buffer with size 1 and just a forces array because every Thread IN A CRITICAL PART has the same time
+ * Once body is locked, he checks that the time of the body is not exceeding the minimum time.
  * Log
- * When time was updated in the middle
+ * When time was updated before merging :
  * Thread : 17Waking : currentTime is :1 clock is 1 Counter is : 0
 Ending While Thread : 17 CurrentTime 1 BUFFER NBODY 25 25 0 0 0 0
 Time has changed : Thread : 9clockTime : 2 CurreentTime :1
@@ -27,6 +25,9 @@ Thread : 11Waking : currentTime is :1 clock is 2 Counter is : 0
 Ending While Thread : 11 CurrentTime 2 BUFFER NBODY 25 25 0 0 0 0
 Time has changed : Thread : 11clockTime : 3 CurreentTime :2
 OLDNBODY ==0 : Thread :11 CurrentTime 3
+
+Explaination of the error : 
+ 
  Let say Thread A changes clock from 0 to 1.
  It does the merge it pauses just before doing currentTime=clock.time.get()
  After this, Thread B updates every position and changes clock from 1 to 2
@@ -43,7 +44,7 @@ public class ProcessingNode implements Runnable {
 	float delta;
 	int maxTime;
 	Clock clock;
-	int fillTime; // Each fillTime timesteps, the node puts in forces[][] the resultant forces of each
+	int fillTime; // Each fillTime timesteps, the ProcessingNode puts in forces[][] the resultant forces of each
 	boolean[][] isNegligible;
 
 	int first;
@@ -65,7 +66,7 @@ public class ProcessingNode implements Runnable {
 		//maxTime - 1 because body[i].time is incremented in the loop
 		while(currentTime < maxTime-1){
 			for(int i=0; i< buffer.nBody[currentTime % buffer.size]; i++){
-				int curBody = (i+first) % buffer.nBody[currentTime % buffer.size];
+				int curBody = (i+first) % buffer.nBody[currentTime % buffer.size];//The body being updated
 				
 				if(buffer.updated[currentTime % buffer.size][curBody])	continue;
 				buffer.counter[currentTime% buffer.size].increment();
