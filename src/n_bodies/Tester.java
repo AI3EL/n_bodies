@@ -23,6 +23,7 @@ import systems.PSystem;
 import systems.TwoBodiesSystem;
 import systems.GridSystem;
 import systems.SolarSystem;
+import systems.TwoSolarSystems;
 
 public class Tester {
 
@@ -125,11 +126,27 @@ public class Tester {
 		}
 	}
 	
+public static void testTwoSolarSystems(int nThreads, int bufferSize, int maxTime, boolean sync, int n1, int sunRadius1, float sunMass1, int planetRadius1, float planetMass1, int n2, int sunRadius2, float sunMass2, int planetRadius2, float planetMass2, float delta,float speedUp){
+		
+		PSystem system = new TwoSolarSystems( sync, n1, sunRadius1, sunMass1, planetRadius1, planetMass1, n2, sunRadius2, sunMass2, planetRadius2, planetMass2, WIDTH, HEIGHT);
+
+		Buffer buffer = new BlockingBuffer(bufferSize,n1+n2);
+		system.initBuffer(buffer);
+
+		Engine engine  = new LockfreeEngine(system, buffer, nThreads, delta, maxTime);
+		// Engine engine  = new PrescheduledEngine(system, buffer, nThreads, delta, maxTime);
+
+		engine.start();
+		Visualizer visualizer = new Visualizer(delta, maxTime, speedUp, buffer, WIDTH, HEIGHT);
+		engine.join();
+
+	}
+	
 	public static void main(String[] args){
 
 		//testGrid(10,10000,9000,10,10, 0.1f, 50.0f);
 		//testGridElectric(4, 10000, 10000 ,6,6, 1.0f, 20.0f);
-		testSolarSystem(2,100,1000,50,1.0f,30.0f);
+		testTwoSolarSystems(4,10000,1000000,true,30, 30, 300, 5, 5, 30, 30, 300, 5, 5,0.1f,20.0f);
 		//threadScalabilityTest();
 
 	}
